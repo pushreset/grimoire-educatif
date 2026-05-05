@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Sorcier de l'Imparfait</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Trebuchet MS', 'Comic Sans MS', sans-serif;
+    background: linear-gradient(135deg, #4b1d8e 0%, #1a0a3e 50%, #2d0a52 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    color: #2c1d4e;
+  }
+
+  .game {
+    background: linear-gradient(180deg, #fffdf5 0%, #fff5e0 100%);
+    border-radius: 28px;
+    padding: 36px 32px;
+    max-width: 640px;
+    width: 100%;
+    box-shadow: 0 25px 70px rgba(0,0,0,0.5), inset 0 0 0 4px #ffd86b;
+    position: relative;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 28px;
+    color: #4b1d8e;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #7a5cb0;
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+
+  .stats {
+    display: flex;
+    justify-content: space-around;
+    background: #fff;
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 16px;
+    border: 2px solid #ffd86b;
+  }
+
+  .stat { text-align: center; }
+  .stat-label {
+    font-size: 11px;
+    color: #7a5cb0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .stat-value {
+    font-size: 22px;
+    font-weight: bold;
+    color: #4b1d8e;
+  }
+
+  .mode-badge {
+    text-align: center;
+    margin-bottom: 16px;
+    font-size: 12px;
+    color: #7a5cb0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  .progress {
+    height: 10px;
+    background: #ffe9b0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #ff8c42, #ffd86b);
+    width: 0%;
+    transition: width 0.4s;
+  }
+
+  .question-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 28px 24px;
+    margin-bottom: 20px;
+    border: 3px solid #4b1d8e;
+    box-shadow: 0 8px 0 #2d0a52;
+  }
+
+  .hint {
+    display: inline-block;
+    background: #ffd86b;
+    color: #4b1d8e;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 14px;
+  }
+
+  .sentence {
+    font-size: 22px;
+    line-height: 1.7;
+    color: #2c1d4e;
+  }
+
+  .blank {
+    display: inline-block;
+    min-width: 80px;
+    border-bottom: 3px dashed #ff8c42;
+    margin: 0 4px;
+    color: transparent;
+  }
+  .blank.filled {
+    color: #2c1d4e;
+    border-bottom: 3px solid #4b1d8e;
+    font-weight: bold;
+  }
+
+  .stem {
+    display: inline-block;
+    background: #e8d8ff;
+    color: #4b1d8e;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: bold;
+    border: 2px solid #4b1d8e;
+  }
+
+  .write-input {
+    display: inline-block;
+    width: 90px;
+    padding: 4px 10px;
+    margin-left: 2px;
+    font-size: 22px;
+    font-family: inherit;
+    font-weight: bold;
+    border: none;
+    border-bottom: 3px dashed #ff8c42;
+    background: #fffaef;
+    color: #2c1d4e;
+    text-align: center;
+    outline: none;
+  }
+  .write-input:focus {
+    border-bottom-color: #4b1d8e;
+    background: #fff;
+  }
+  .write-input.correct {
+    background: #d4f5d4;
+    border-bottom: 3px solid #2d7a3a;
+    color: #1a4a22;
+  }
+  .write-input.wrong {
+    background: #ffe0e0;
+    border-bottom: 3px solid #a82020;
+    color: #5a0a0a;
+  }
+
+  .ending-help {
+    margin-top: 18px;
+    padding: 12px;
+    background: #f5edff;
+    border-radius: 10px;
+    font-size: 13px;
+    color: #4b1d8e;
+    text-align: center;
+  }
+  .ending-help strong { color: #2d0a52; }
+
+  .options {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  @media (min-width: 480px) {
+    .options { grid-template-columns: 1fr 1fr 1fr; }
+  }
+
+  .option {
+    background: white;
+    border: 3px solid #4b1d8e;
+    border-radius: 14px;
+    padding: 16px 12px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #2c1d4e;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform 0.1s, background 0.2s;
+    box-shadow: 0 4px 0 #2d0a52;
+  }
+  .option:hover:not(:disabled) {
+    background: #fff5e0;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #2d0a52;
+  }
+  .option:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #2d0a52;
+  }
+  .option:disabled { cursor: default; }
+  .option.correct {
+    background: #7fdc8a;
+    border-color: #2d7a3a;
+    color: #1a4a22;
+    box-shadow: 0 4px 0 #2d7a3a;
+    animation: pop 0.4s;
+  }
+  .option.wrong {
+    background: #ff8a8a;
+    border-color: #a82020;
+    color: #5a0a0a;
+    box-shadow: 0 4px 0 #a82020;
+    animation: shake 0.4s;
+  }
+
+  @keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+
+  .feedback {
+    margin-top: 18px;
+    padding: 16px;
+    border-radius: 14px;
+    font-size: 16px;
+    text-align: center;
+    display: none;
+  }
+  .feedback.show { display: block; }
+  .feedback.good {
+    background: #d4f5d4;
+    color: #1a4a22;
+    border: 2px solid #7fdc8a;
+  }
+  .feedback.bad {
+    background: #ffe0e0;
+    color: #5a0a0a;
+    border: 2px solid #ff8a8a;
+  }
+
+  .next-btn, .start-btn, .replay-btn, .check-btn, .mode-btn {
+    display: block;
+    width: 100%;
+    margin-top: 16px;
+    padding: 16px;
+    background: linear-gradient(180deg, #ff8c42, #e06a1f);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 4px 0 #a04510;
+    transition: transform 0.1s;
+  }
+  .next-btn:hover, .start-btn:hover, .replay-btn:hover, .check-btn:hover, .mode-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #a04510;
+  }
+  .next-btn:active, .start-btn:active, .replay-btn:active, .check-btn:active, .mode-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #a04510;
+  }
+
+  .mode-btn.easy {
+    background: linear-gradient(180deg, #5cc97f, #2d8a4f);
+    box-shadow: 0 4px 0 #1a5a30;
+  }
+  .mode-btn.easy:hover { box-shadow: 0 6px 0 #1a5a30; }
+  .mode-btn.easy:active { box-shadow: 0 2px 0 #1a5a30; }
+
+  .mode-btn.hard {
+    background: linear-gradient(180deg, #b85cff, #7a2dc9);
+    box-shadow: 0 4px 0 #4a1a7a;
+  }
+  .mode-btn.hard:hover { box-shadow: 0 6px 0 #4a1a7a; }
+  .mode-btn.hard:active { box-shadow: 0 2px 0 #4a1a7a; }
+
+  .start-screen, .end-screen {
+    text-align: center;
+    padding: 20px 0;
+  }
+
+  .wizard {
+    font-size: 80px;
+    margin-bottom: 16px;
+    display: inline-block;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .start-screen p, .end-screen p {
+    font-size: 16px;
+    color: #4b1d8e;
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+
+  .mode-choice { margin-top: 24px; }
+
+  .mode-desc {
+    font-size: 12px;
+    color: #7a5cb0;
+    margin-top: 4px;
+    margin-bottom: 12px;
+    font-style: italic;
+  }
+
+  .final-score {
+    font-size: 48px;
+    color: #4b1d8e;
+    font-weight: bold;
+    margin: 20px 0;
+  }
+
+  .stars {
+    font-size: 40px;
+    margin: 16px 0;
+    letter-spacing: 8px;
+  }
+
+  .hidden { display: none !important; }
+
+  .home-link {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #4b1d8e;
+    text-decoration: none;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 10;
+  }
+  .home-link:hover { background: #fff; }
+</style>
+</head>
+<body>
+
+<a href="../index.html" class="home-link">← Grimoire</a>
+
+<div class="game">
+
+  <div id="start-screen" class="start-screen">
+    <div class="wizard">🧙‍♂️</div>
+    <h1>Le Sorcier de l'Imparfait</h1>
+    <p class="subtitle">Trouve la bonne formule magique pour conjuguer les verbes !</p>
+    <p>Tu vas avoir <strong>10 questions</strong>.<br>Choisis ton niveau de difficulté.</p>
+
+    <div class="mode-choice">
+      <button class="mode-btn easy" onclick="startGame('qcm')">🟢 Mode facile (QCM)</button>
+      <p class="mode-desc">Tu choisis la bonne réponse parmi 3</p>
+
+      <button class="mode-btn hard" onclick="startGame('write')">🟣 Mode sorcier (écriture)</button>
+      <p class="mode-desc">Tu écris toi-même la fin du verbe !</p>
+    </div>
+  </div>
+
+  <div id="game-screen" class="hidden">
+    <h1>🧙‍♂️ Le Sorcier de l'Imparfait</h1>
+    <div class="mode-badge" id="mode-badge"></div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">Question</div>
+        <div class="stat-value"><span id="q-num">1</span>/10</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Étoiles</div>
+        <div class="stat-value">⭐ <span id="score">0</span></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Série</div>
+        <div class="stat-value">🔥 <span id="streak">0</span></div>
+      </div>
+    </div>
+
+    <div class="progress">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div class="question-card">
+      <div class="hint">Verbe : <span id="verb-hint">être</span></div>
+      <div class="sentence" id="sentence"></div>
+      <div class="ending-help hidden" id="ending-help">
+        💡 Les terminaisons de l'imparfait : <strong>-ais, -ais, -ait, -ions, -iez, -aient</strong>
+      </div>
+    </div>
+
+    <div class="options" id="options"></div>
+
+    <button class="check-btn hidden" id="check-btn" onclick="checkWriteAnswer()">Vérifier ✨</button>
+
+    <div class="feedback" id="feedback"></div>
+
+    <button class="next-btn hidden" id="next-btn" onclick="nextQuestion()">Question suivante →</button>
+  </div>
+
+  <div id="end-screen" class="hidden end-screen">
+    <div class="wizard" id="end-emoji">🏆</div>
+    <h1 id="end-title">Bravo !</h1>
+    <div class="stars" id="end-stars"></div>
+    <div class="final-score"><span id="final-score">0</span>/10</div>
+    <p id="end-message"></p>
+    <button class="replay-btn" onclick="resetGame()">Rejouer 🔄</button>
+  </div>
+
+</div>
+
+<script>
+const verbs = {
+  'être':    { je: 'étais',    tu: 'étais',    il: 'était',    nous: 'étions',    vous: 'étiez',    ils: 'étaient' },
+  'avoir':   { je: 'avais',    tu: 'avais',    il: 'avait',    nous: 'avions',    vous: 'aviez',    ils: 'avaient' },
+  'aller':   { je: 'allais',   tu: 'allais',   il: 'allait',   nous: 'allions',   vous: 'alliez',   ils: 'allaient' },
+  'habiter': { je: 'habitais', tu: 'habitais', il: 'habitait', nous: 'habitions', vous: 'habitiez', ils: 'habitaient' },
+  'fêter':   { je: 'fêtais',   tu: 'fêtais',   il: 'fêtait',   nous: 'fêtions',   vous: 'fêtiez',   ils: 'fêtaient' },
+  'couper':  { je: 'coupais',  tu: 'coupais',  il: 'coupait',  nous: 'coupions',  vous: 'coupiez',  ils: 'coupaient' }
+};
+
+const stems = {
+  'être': 'ét',
+  'avoir': 'av',
+  'aller': 'all',
+  'habiter': 'habit',
+  'fêter': 'fêt',
+  'couper': 'coup'
+};
+
+const sentences = [
+  { before: "Quand j'", after: " petit, j'avais peur du noir.", verb: 'être', pronoun: 'je' },
+  { before: "Tu ", after: " vraiment drôle hier !", verb: 'être', pronoun: 'tu' },
+  { before: "Le chien ", after: " sous la table.", verb: 'être', pronoun: 'il' },
+  { before: "Nous ", after: " en vacances à la mer.", verb: 'être', pronoun: 'nous' },
+  { before: "Vous ", after: " très gentils avec moi.", verb: 'être', pronoun: 'vous' },
+  { before: "Les enfants ", after: " contents de la surprise.", verb: 'être', pronoun: 'ils' },
+
+  { before: "J'", after: " un vélo rouge l'année dernière.", verb: 'avoir', pronoun: 'je' },
+  { before: "Tu ", after: " raison, j'aurais dû t'écouter.", verb: 'avoir', pronoun: 'tu' },
+  { before: "Ma sœur ", after: " les cheveux longs avant.", verb: 'avoir', pronoun: 'il' },
+  { before: "Nous ", after: " très faim après le sport.", verb: 'avoir', pronoun: 'nous' },
+  { before: "Vous ", after: " beaucoup de jouets dans votre chambre.", verb: 'avoir', pronoun: 'vous' },
+  { before: "Mes amis ", after: " peur du tonnerre.", verb: 'avoir', pronoun: 'ils' },
+
+  { before: "J'", after: " à l'école à pied tous les matins.", verb: 'aller', pronoun: 'je' },
+  { before: "Tu ", after: " trop vite sur ton vélo.", verb: 'aller', pronoun: 'tu' },
+  { before: "Mon père ", after: " au travail en train.", verb: 'aller', pronoun: 'il' },
+  { before: "Nous ", after: " à la piscine le mercredi.", verb: 'aller', pronoun: 'nous' },
+  { before: "Vous ", after: " souvent au cinéma le samedi ?", verb: 'aller', pronoun: 'vous' },
+  { before: "Mes cousins ", after: " au parc chaque été.", verb: 'aller', pronoun: 'ils' },
+
+  { before: "J'", after: " près de la mer quand j'étais petit.", verb: 'habiter', pronoun: 'je' },
+  { before: "Tu ", after: " avec ta grand-mère avant.", verb: 'habiter', pronoun: 'tu' },
+  { before: "Elle ", after: " dans une grande maison.", verb: 'habiter', pronoun: 'il' },
+  { before: "Nous ", after: " à Paris quand j'étais bébé.", verb: 'habiter', pronoun: 'nous' },
+  { before: "Vous ", after: " au troisième étage avant ?", verb: 'habiter', pronoun: 'vous' },
+  { before: "Mes grands-parents ", after: " à la campagne.", verb: 'habiter', pronoun: 'ils' },
+
+  { before: "Je ", after: " mon anniversaire en juillet.", verb: 'fêter', pronoun: 'je' },
+  { before: "Tu ", after: " Noël chez tes cousins l'an dernier.", verb: 'fêter', pronoun: 'tu' },
+  { before: "Mon frère ", after: " ses 10 ans avec ses copains.", verb: 'fêter', pronoun: 'il' },
+  { before: "Nous ", after: " la victoire de l'équipe ensemble.", verb: 'fêter', pronoun: 'nous' },
+  { before: "Vous ", after: " Halloween chaque année.", verb: 'fêter', pronoun: 'vous' },
+  { before: "Ils ", after: " la fin de l'école avec un goûter.", verb: 'fêter', pronoun: 'ils' },
+
+  { before: "Je ", after: " toujours le pain pour le repas.", verb: 'couper', pronoun: 'je' },
+  { before: "Tu ", after: " les fleurs du jardin avec maman.", verb: 'couper', pronoun: 'tu' },
+  { before: "Le boulanger ", after: " la baguette en deux.", verb: 'couper', pronoun: 'il' },
+  { before: "Nous ", after: " le gâteau d'anniversaire ensemble.", verb: 'couper', pronoun: 'nous' },
+  { before: "Vous ", after: " du bois pour la cheminée ?", verb: 'couper', pronoun: 'vous' },
+  { before: "Les jardiniers ", after: " des branches d'arbre.", verb: 'couper', pronoun: 'ils' }
+];
+
+let questions = [];
+let currentIndex = 0;
+let score = 0;
+let streak = 0;
+let bestStreak = 0;
+let gameMode = 'qcm';
+const TOTAL_QUESTIONS = 10;
+
+function shuffle(arr) {
+  return arr.slice().sort(() => Math.random() - 0.5);
+}
+
+function getDistractors(verb, correctForm) {
+  const allForms = Object.values(verbs[verb]);
+  const unique = [...new Set(allForms)].filter(f => f !== correctForm);
+  return shuffle(unique).slice(0, 2);
+}
+
+function getEnding(verb, fullForm) {
+  const stem = stems[verb];
+  return fullForm.substring(stem.length);
+}
+
+function startGame(mode) {
+  gameMode = mode;
+  document.getElementById('start-screen').classList.add('hidden');
+  document.getElementById('game-screen').classList.remove('hidden');
+
+  document.getElementById('mode-badge').textContent =
+    mode === 'qcm' ? '🟢 Mode facile' : '🟣 Mode sorcier';
+
+  document.getElementById('ending-help').classList.toggle('hidden', mode !== 'write');
+
+  questions = shuffle(sentences).slice(0, TOTAL_QUESTIONS);
+  currentIndex = 0;
+  score = 0;
+  streak = 0;
+  bestStreak = 0;
+  showQuestion();
+}
+
+function showQuestion() {
+  const q = questions[currentIndex];
+  const correct = verbs[q.verb][q.pronoun];
+
+  document.getElementById('q-num').textContent = currentIndex + 1;
+  document.getElementById('score').textContent = score;
+  document.getElementById('streak').textContent = streak;
+  document.getElementById('verb-hint').textContent = q.verb;
+  document.getElementById('progress-bar').style.width = ((currentIndex) / TOTAL_QUESTIONS * 100) + '%';
+
+  document.getElementById('feedback').classList.remove('show');
+  document.getElementById('next-btn').classList.add('hidden');
+
+  if (gameMode === 'qcm') {
+    showQcmQuestion(q, correct);
+  } else {
+    showWriteQuestion(q, correct);
+  }
+}
+
+function showQcmQuestion(q, correct) {
+  document.getElementById('options').classList.remove('hidden');
+  document.getElementById('check-btn').classList.add('hidden');
+
+  document.getElementById('sentence').innerHTML =
+    q.before + '<span class="blank" id="blank">_____</span>' + q.after;
+
+  const distractors = getDistractors(q.verb, correct);
+  const options = shuffle([correct, ...distractors]);
+
+  const optionsDiv = document.getElementById('options');
+  optionsDiv.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.onclick = () => answer(opt, correct, btn);
+    optionsDiv.appendChild(btn);
+  });
+}
+
+function showWriteQuestion(q, correct) {
+  document.getElementById('options').classList.add('hidden');
+  document.getElementById('check-btn').classList.remove('hidden');
+  document.getElementById('check-btn').disabled = false;
+
+  const stem = stems[q.verb];
+
+  document.getElementById('sentence').innerHTML =
+    q.before +
+    '<span class="stem">' + stem + '</span>' +
+    '<input type="text" class="write-input" id="write-input" autocomplete="off" maxlength="6" />' +
+    q.after;
+
+  const input = document.getElementById('write-input');
+  setTimeout(() => input.focus(), 50);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      checkWriteAnswer();
+    }
+  });
+}
+
+function checkWriteAnswer() {
+  const q = questions[currentIndex];
+  const correct = verbs[q.verb][q.pronoun];
+  const correctEnding = getEnding(q.verb, correct);
+  const input = document.getElementById('write-input');
+  const userEnding = input.value.trim().toLowerCase();
+
+  if (userEnding === '') {
+    input.focus();
+    return;
+  }
+
+  input.disabled = true;
+  document.getElementById('check-btn').classList.add('hidden');
+
+  const isCorrect = userEnding === correctEnding.toLowerCase();
+  handleAnswer(isCorrect, correct, input, correctEnding);
+}
+
+function answer(chosen, correct, btn) {
+  const allBtns = document.querySelectorAll('.option');
+  allBtns.forEach(b => {
+    b.disabled = true;
+    if (b.textContent === correct) b.classList.add('correct');
+  });
+
+  const blank = document.getElementById('blank');
+  blank.textContent = correct;
+  blank.classList.add('filled');
+
+  const isCorrect = chosen === correct;
+  if (!isCorrect) btn.classList.add('wrong');
+
+  handleAnswer(isCorrect, correct, null, null);
+}
+
+function handleAnswer(isCorrect, correct, writeInput, correctEnding) {
+  const feedback = document.getElementById('feedback');
+  feedback.classList.add('show');
+
+  if (isCorrect) {
+    score++;
+    streak++;
+    if (streak > bestStreak) bestStreak = streak;
+
+    let bonusMsg = '';
+    if (streak >= 3 && streak % 3 === 0) {
+      score++;
+      bonusMsg = ` 🔥 Série de ${streak} ! +1 étoile bonus !`;
+    }
+
+    if (writeInput) writeInput.classList.add('correct');
+
+    feedback.className = 'feedback show good';
+    const messages = ['Bravo ! 🎉', 'Génial ! ⭐', 'Parfait ! 🌟', 'Excellent ! ✨', 'Bien joué ! 🏆'];
+    feedback.textContent = messages[Math.floor(Math.random() * messages.length)] + bonusMsg;
+  } else {
+    streak = 0;
+    if (writeInput) {
+      writeInput.classList.add('wrong');
+      feedback.className = 'feedback show bad';
+      feedback.innerHTML = `Presque ! La bonne terminaison était <strong>-${correctEnding}</strong>, donc on écrit <strong>${correct}</strong>.`;
+    } else {
+      feedback.className = 'feedback show bad';
+      feedback.innerHTML = `Presque ! La bonne réponse était <strong>${correct}</strong>.`;
+    }
+  }
+
+  document.getElementById('score').textContent = score;
+  document.getElementById('streak').textContent = streak;
+  document.getElementById('next-btn').classList.remove('hidden');
+
+  if (currentIndex === TOTAL_QUESTIONS - 1) {
+    document.getElementById('next-btn').textContent = 'Voir mon score 🏆';
+  } else {
+    document.getElementById('next-btn').textContent = 'Question suivante →';
+  }
+}
+
+function nextQuestion() {
+  currentIndex++;
+  if (currentIndex >= TOTAL_QUESTIONS) {
+    endGame();
+  } else {
+    showQuestion();
+  }
+}
+
+function endGame() {
+  document.getElementById('game-screen').classList.add('hidden');
+  document.getElementById('end-screen').classList.remove('hidden');
+
+  const finalScore = score;
+  const maxScore = TOTAL_QUESTIONS;
+  document.getElementById('final-score').textContent = finalScore;
+
+  let stars, title, emoji, message;
+  const ratio = finalScore / maxScore;
+
+  if (ratio >= 1) {
+    stars = '⭐⭐⭐⭐⭐';
+    title = 'PARFAIT !';
+    emoji = '🏆';
+    message = gameMode === 'write'
+      ? "Tu es un vrai maître de l'imparfait ! En mode sorcier en plus, incroyable !"
+      : "Tu maîtrises super bien ! Essaie le mode sorcier pour te défier !";
+  } else if (ratio >= 0.8) {
+    stars = '⭐⭐⭐⭐';
+    title = 'Super !';
+    emoji = '🌟';
+    message = 'Excellent travail ! Tu maîtrises très bien.';
+  } else if (ratio >= 0.6) {
+    stars = '⭐⭐⭐';
+    title = 'Bien joué !';
+    emoji = '😊';
+    message = "Bravo ! Continue à t'entraîner pour devenir un vrai sorcier.";
+  } else if (ratio >= 0.4) {
+    stars = '⭐⭐';
+    title = 'Pas mal !';
+    emoji = '💪';
+    message = 'Tu progresses. Recommence pour faire encore mieux !';
+  } else {
+    stars = '⭐';
+    title = 'Bon début !';
+    emoji = '🌱';
+    message = "C'est en pratiquant qu'on devient sorcier. Réessaie !";
+  }
+
+  if (bestStreak >= 5) {
+    message += ` 🔥 Meilleure série : ${bestStreak} d'affilée !`;
+  }
+
+  document.getElementById('end-stars').textContent = stars;
+  document.getElementById('end-title').textContent = title;
+  document.getElementById('end-emoji').textContent = emoji;
+  document.getElementById('end-message').textContent = message;
+}
+
+function resetGame() {
+  document.getElementById('end-screen').classList.add('hidden');
+  document.getElementById('start-screen').classList.remove('hidden');
+}
+</script>
+
+</body>
+</html>
