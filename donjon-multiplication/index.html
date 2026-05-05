@@ -1,0 +1,2303 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Donjon des Multiplications</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  :root {
+    --bg-deep: #0d0a08;
+    --stone: #3d342a;
+    --stone-light: #5a4d3e;
+    --floor: #211a14;
+    --gold: #d4a836;
+    --blood: #c1342a;
+    --heal: #4a8c3a;
+    --torch: #ff8833;
+    --text: #e8d8b0;
+    --text-dim: #a89b80;
+    --parchment: #d4c5a0;
+    /* Facteur d'agrandissement du sprite art à l'intérieur de la frame.
+       1.0 = pas de zoom (le perso reste petit avec son cadre blanc).
+       1.3 = perso ~30% plus gros, marges du sprite art croppées. */
+    --sprite-zoom: 1.3;
+  }
+  
+  body {
+    background: var(--bg-deep);
+    color: var(--text);
+    font-family: 'Courier New', monospace;
+    user-select: none;
+    -webkit-user-select: none;
+    /* 100dvh suit dynamiquement la barre d'URL mobile (Safari iOS / Chrome
+       Android) — évite que le bouton OK passe sous la chrome du navigateur.
+       Fallback 100vh pour les vieux navigateurs. */
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    padding: 12px;
+    /* Ajoute la safe-area-inset-bottom (home bar iOS) au padding du bas. */
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+  
+  #game {
+    width: 100%;
+    max-width: 720px;
+    background: linear-gradient(180deg, #1a1410 0%, #0d0a08 100%);
+    border: 4px solid var(--stone);
+    border-radius: 8px;
+    box-shadow: 0 0 40px rgba(0,0,0,0.8), inset 0 0 60px rgba(0,0,0,0.5);
+    image-rendering: pixelated;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  /* TORCHES sur les côtés */
+  .torch {
+    position: absolute;
+    top: 60px;
+    width: 24px;
+    height: 60px;
+    z-index: 5;
+    pointer-events: none;
+  }
+  .torch.left { left: 12px; }
+  .torch.right { right: 12px; }
+  .torch::before {
+    content: '';
+    position: absolute;
+    top: 30px; left: 50%;
+    transform: translateX(-50%);
+    width: 6px; height: 30px;
+    background: #4a3020;
+  }
+  .torch::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 16px; height: 24px;
+    background: radial-gradient(ellipse at center bottom, #ffeb3b 0%, #ff8833 40%, #c1342a 70%, transparent 100%);
+    border-radius: 50% 50% 30% 30%;
+    filter: blur(2px);
+    animation: flicker 0.8s infinite alternate;
+  }
+  .torch-glow {
+    position: absolute;
+    top: -20px; left: 50%;
+    transform: translateX(-50%);
+    width: 100px; height: 100px;
+    background: radial-gradient(circle, rgba(255,136,51,0.3) 0%, transparent 70%);
+    animation: flicker 1.2s infinite alternate;
+    pointer-events: none;
+  }
+  
+  @keyframes flicker {
+    0% { opacity: 0.85; transform: translateX(-50%) scale(1); }
+    100% { opacity: 1; transform: translateX(-50%) scale(1.1); }
+  }
+  
+  /* HUD du haut */
+  .hud {
+    background: linear-gradient(180deg, var(--stone) 0%, var(--floor) 100%);
+    border-bottom: 3px solid var(--stone-light);
+    padding: 12px 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 14px;
+    position: relative;
+    z-index: 6;
+  }
+  
+  .hud-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: bold;
+  }
+  
+  .hud-item .icon { font-size: 16px; }
+  .hud-item .value { color: var(--text); }
+  .hud-item.hp .value { color: var(--blood); }
+  .hud-item.gold .value { color: var(--gold); }
+  
+  .hp-hearts { letter-spacing: 2px; }
+  
+  /* SCÈNE de jeu */
+  .scene {
+    min-height: 380px;
+    padding: 32px 60px 16px;
+    background: 
+      linear-gradient(180deg, transparent 0%, transparent 60%, rgba(0,0,0,0.6) 100%),
+      repeating-linear-gradient(
+        45deg,
+        var(--stone) 0px,
+        var(--stone) 2px,
+        var(--stone-light) 2px,
+        var(--stone-light) 4px
+      );
+    position: relative;
+    overflow: hidden;
+  }
+  
+  /* Sol en pierre */
+  .scene::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 60px;
+    background: 
+      linear-gradient(180deg, transparent 0%, var(--floor) 50%),
+      repeating-linear-gradient(
+        90deg,
+        var(--floor) 0px,
+        var(--floor) 30px,
+        #1a1308 30px,
+        #1a1308 32px
+      );
+    border-top: 2px solid #1a1308;
+  }
+  
+  .scene-text {
+    text-align: center;
+    font-size: 18px;
+    line-height: 1.7;
+    color: var(--parchment);
+    text-shadow: 1px 1px 0 #000, 0 0 8px rgba(0,0,0,0.9);
+    margin-bottom: 20px;
+    font-style: italic;
+    position: relative;
+    z-index: 2;
+    min-height: 40px;
+  }
+  
+  .scene-actors {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    min-height: 300px;
+    position: relative;
+    z-index: 3;
+  }
+  
+  .actor {
+    position: relative;
+  }
+  
+  .sprite {
+    width: 300px;
+    height: 300px;
+    overflow: hidden;
+    image-rendering: pixelated;
+    -ms-interpolation-mode: nearest-neighbor;
+    position: relative;
+  }
+  
+  .sprite img {
+    /* L'image fait sprite-zoom × la hauteur du conteneur, ancrée en bas
+       (les pieds du perso restent au sol, la tête peut déborder en haut
+       — clippée par .sprite { overflow: hidden }). */
+    height: calc(100% * var(--sprite-zoom));
+    width: auto;
+    image-rendering: pixelated;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    transition: transform 0s;
+  }
+  
+  /* Flip via la propriété `scale` indépendante : `transform` reste libre
+     pour les keyframes shake/fadeOut sans dupliquer en version "flipped". */
+  .sprite.flipped {
+    scale: -1 1;
+  }
+
+  .actor-hp {
+    text-align: center;
+    font-size: 14px;
+    color: var(--blood);
+    font-weight: bold;
+    text-shadow: 1px 1px 0 #000;
+    margin-top: -10px;
+    letter-spacing: 2px;
+  }
+
+  .actor.hurt .sprite {
+    animation: shake 0.4s;
+    filter: brightness(1.5) sepia(1) hue-rotate(-50deg);
+  }
+
+  .actor.dying .sprite {
+    animation: fadeOut 1s forwards;
+  }
+
+  @keyframes shake {
+    0%, 100% { translate: 0 0; }
+    25% { translate: -8px 0; }
+    75% { translate: 8px 0; }
+  }
+
+  @keyframes fadeOut {
+    to { opacity: 0; translate: 0 8px; }
+  }
+  
+  /* Question / Multiplication */
+  .question-box {
+    background: var(--parchment);
+    color: #2a1f15;
+    border: 3px solid #6b4f30;
+    border-radius: 4px;
+    padding: 16px 24px;
+    text-align: center;
+    margin: 16px 60px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+    position: relative;
+    z-index: 4;
+  }
+  
+  .question-text {
+    font-size: 14px;
+    color: #5a3f25;
+    margin-bottom: 8px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  
+  .question-multi {
+    font-size: 36px;
+    font-weight: bold;
+    color: #2a1f15;
+    margin-bottom: 12px;
+  }
+  
+  .input-display {
+    background: #2a1f15;
+    color: var(--gold);
+    font-size: 32px;
+    font-weight: bold;
+    padding: 8px 16px;
+    border-radius: 4px;
+    min-height: 50px;
+    display: inline-block;
+    min-width: 120px;
+    border: 2px solid #6b4f30;
+    letter-spacing: 4px;
+  }
+  
+  .input-display.empty {
+    color: #6b4f30;
+  }
+  
+  /* Pavé numérique */
+  .numpad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 16px;
+    margin: 0 60px 16px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 8px;
+    border: 2px solid var(--stone);
+    position: relative;
+    z-index: 4;
+  }
+  
+  .numpad button {
+    background: linear-gradient(180deg, var(--stone-light) 0%, var(--stone) 100%);
+    color: var(--text);
+    border: 2px solid #6b4f30;
+    border-radius: 6px;
+    padding: 16px;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.1s;
+    box-shadow: 0 3px 0 #1a1308, inset 0 1px 0 rgba(255,255,255,0.1);
+  }
+  
+  .numpad button:hover:not(:disabled) {
+    background: linear-gradient(180deg, #6b5a48 0%, var(--stone-light) 100%);
+    transform: translateY(-1px);
+  }
+  
+  .numpad button:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 #1a1308;
+  }
+  
+  .numpad button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  
+  .numpad button.clear {
+    background: linear-gradient(180deg, #8a4a3a 0%, #6a3520 100%);
+    color: #ffd0a0;
+  }
+  
+  .numpad button.ok {
+    background: linear-gradient(180deg, #5a8a3a 0%, #3a6a20 100%);
+    color: #d0ffa0;
+  }
+  
+  /* Choix de portes */
+  .choices {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    margin: 0 60px 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+    position: relative;
+    z-index: 4;
+  }
+  
+  .choice-btn {
+    flex: 1;
+    min-width: 140px;
+    background: linear-gradient(180deg, var(--stone-light) 0%, var(--stone) 100%);
+    color: var(--text);
+    border: 3px solid #6b4f30;
+    border-radius: 6px;
+    padding: 20px 16px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    text-align: center;
+    box-shadow: 0 4px 0 #1a1308;
+  }
+  
+  .choice-btn:hover {
+    background: linear-gradient(180deg, #6b5a48 0%, var(--stone-light) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #1a1308;
+  }
+  
+  .choice-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #1a1308;
+  }
+  
+  .choice-icon {
+    font-size: 32px;
+    display: block;
+    margin-bottom: 6px;
+  }
+  
+  /* Coffre */
+  .chest-display {
+    text-align: center;
+    margin: 20px 0;
+    position: relative;
+    z-index: 3;
+  }
+  
+  .chest-emoji {
+    font-size: 80px;
+    display: inline-block;
+    animation: chestBob 2s infinite ease-in-out;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.8));
+  }
+  
+  @keyframes chestBob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  
+  /* Feedback messages */
+  .feedback {
+    text-align: center;
+    margin: 12px 60px;
+    font-size: 16px;
+    font-weight: bold;
+    min-height: 24px;
+    text-shadow: 2px 2px 0 #000;
+    position: relative;
+    z-index: 4;
+  }
+  
+  .feedback.success { color: var(--heal); }
+  .feedback.fail { color: var(--blood); }
+  .feedback.info { color: var(--gold); }
+
+  .taunt {
+    color: var(--torch);
+    display: inline-block;
+    margin-top: 4px;
+  }
+
+  /* Outline visible uniquement au clavier (pas au clic) */
+  button:focus-visible {
+    outline: 3px solid var(--gold);
+    outline-offset: 2px;
+  }
+  .numpad button:focus-visible {
+    outline-color: var(--torch);
+  }
+  
+  /* Setup screen */
+  .setup-screen {
+    padding: 40px 30px;
+    text-align: center;
+  }
+  
+  .game-title {
+    font-size: 32px;
+    color: var(--gold);
+    margin-bottom: 8px;
+    text-shadow: 3px 3px 0 #000, 0 0 16px var(--torch);
+    letter-spacing: 2px;
+    line-height: 1.2;
+  }
+  
+  .game-subtitle {
+    color: var(--text-dim);
+    font-style: italic;
+    margin-bottom: 32px;
+    font-size: 14px;
+  }
+  
+  .tables-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 24px;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .table-btn {
+    background: linear-gradient(180deg, var(--stone-light) 0%, var(--stone) 100%);
+    color: var(--text);
+    border: 3px solid #6b4f30;
+    padding: 14px 4px;
+    font-size: 15px;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    box-shadow: 0 3px 0 #1a1308;
+    line-height: 1.2;
+  }
+  
+  .table-btn:hover { transform: translateY(-1px); }
+  
+  .table-btn.selected {
+    background: linear-gradient(180deg, var(--gold) 0%, #a87f1e 100%);
+    color: #1a1308;
+    border-color: var(--gold);
+    box-shadow: 0 0 16px rgba(212, 168, 54, 0.6), 0 3px 0 #5a3f12;
+  }
+  
+  .hardcore-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(180deg, var(--stone-light) 0%, var(--stone) 100%);
+    border: 3px solid #6b4f30;
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin: 0 auto 18px;
+    max-width: 360px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text-dim);
+    font-weight: bold;
+    transition: all 0.15s;
+    box-shadow: 0 3px 0 #1a1308;
+    text-align: left;
+    width: 100%;
+  }
+  .hardcore-toggle:hover { transform: translateY(-1px); }
+  .hardcore-toggle.active {
+    background: linear-gradient(180deg, var(--blood) 0%, #6a1a10 100%);
+    color: #ffd0a0;
+    border-color: var(--blood);
+    box-shadow: 0 0 16px rgba(193,52,42,0.5), 0 3px 0 #5a0e08;
+  }
+  .hardcore-toggle .hc-icon { font-size: 22px; line-height: 1; flex-shrink: 0; }
+  .hardcore-toggle .hc-text { flex: 1; line-height: 1.3; }
+  .hardcore-toggle .hc-sub { display: block; font-size: 11px; opacity: 0.75; font-weight: normal; margin-top: 2px; }
+
+  /* Timer hardcore inline dans la question */
+  .question-timer {
+    display: inline-block;
+    margin-left: 14px;
+    font-size: 22px;
+    color: #6b4f30;
+    font-weight: bold;
+    vertical-align: baseline;
+    min-width: 70px;
+  }
+  .question-timer.danger {
+    color: var(--blood);
+    animation: timerPulse 0.5s infinite alternate;
+  }
+  @keyframes timerPulse {
+    to { transform: scale(1.15); }
+  }
+
+  .start-btn {
+    background: linear-gradient(180deg, #8a3a2a 0%, #6a1a10 100%);
+    color: #ffe0c0;
+    border: 3px solid #d4a836;
+    padding: 18px 40px;
+    font-size: 20px;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    box-shadow: 0 4px 0 #2a0a05, 0 0 20px rgba(255,136,51,0.3);
+    letter-spacing: 2px;
+  }
+  
+  .start-btn:hover {
+    background: linear-gradient(180deg, #aa4a3a 0%, #8a2a20 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #2a0a05, 0 0 30px rgba(255,136,51,0.5);
+  }
+  
+  .start-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #2a0a05;
+  }
+  
+  .start-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  
+  /* Écran prénom */
+  .name-screen {
+    padding: 40px 24px;
+    text-align: center;
+  }
+  .name-screen h1 {
+    font-size: 26px;
+    color: var(--gold);
+    margin-bottom: 8px;
+    text-shadow: 2px 2px 0 #000, 0 0 12px var(--torch);
+  }
+  .name-screen p {
+    color: var(--text-dim);
+    font-style: italic;
+    margin-bottom: 24px;
+    font-size: 14px;
+  }
+  .name-input {
+    background: var(--parchment);
+    color: #2a1f15;
+    border: 3px solid #6b4f30;
+    border-radius: 6px;
+    padding: 14px 20px;
+    font-size: 22px;
+    font-weight: bold;
+    text-align: center;
+    font-family: inherit;
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 280px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+  .name-input:focus {
+    outline: 3px solid var(--gold);
+    outline-offset: 2px;
+  }
+
+  /* Game over / Victoire */
+  .gameover-screen,
+  .victory-screen {
+    padding: 32px 24px;
+    text-align: center;
+  }
+  .victory-title {
+    font-size: 32px;
+    color: var(--gold);
+    margin-bottom: 8px;
+    text-shadow: 3px 3px 0 #000, 0 0 20px var(--torch);
+    letter-spacing: 3px;
+    animation: victoryPulse 1.2s infinite alternate;
+  }
+  @keyframes victoryPulse {
+    0% { text-shadow: 3px 3px 0 #000, 0 0 20px var(--torch); }
+    100% { text-shadow: 3px 3px 0 #000, 0 0 36px var(--torch), 0 0 12px var(--gold); }
+  }
+  .end-flavor {
+    color: var(--text-dim);
+    font-style: italic;
+    margin-bottom: 20px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .end-name {
+    color: var(--gold);
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+  }
+  .score-breakdown {
+    background: rgba(0,0,0,0.45);
+    border: 2px solid var(--stone);
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin: 0 auto 20px;
+    max-width: 360px;
+    font-size: 13px;
+  }
+  .score-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 4px 0;
+    border-bottom: 1px dashed rgba(168,155,128,0.2);
+  }
+  .score-row:last-child { border-bottom: none; }
+  .score-row.total {
+    border-top: 2px solid var(--gold);
+    margin-top: 6px;
+    padding-top: 8px;
+    font-size: 17px;
+    color: var(--gold);
+    font-weight: bold;
+  }
+  .score-row .label { color: var(--text-dim); }
+  .score-row .value { color: var(--text); font-weight: bold; }
+  .score-row.mult .value { color: var(--torch); }
+  .end-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .end-actions .start-btn {
+    padding: 14px 24px;
+    font-size: 16px;
+  }
+  .end-actions .secondary-btn {
+    background: linear-gradient(180deg, var(--stone-light) 0%, var(--stone) 100%);
+    color: var(--text);
+    border: 3px solid #6b4f30;
+    border-radius: 6px;
+    padding: 14px 20px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 3px 0 #1a1308;
+    letter-spacing: 1px;
+  }
+  .end-actions .secondary-btn:hover {
+    background: linear-gradient(180deg, #6b5a48 0%, var(--stone-light) 100%);
+  }
+
+  /* Leaderboard */
+  .leaderboard-screen {
+    padding: 28px 16px 24px;
+  }
+  .leaderboard-screen h1 {
+    font-size: 26px;
+    color: var(--gold);
+    text-align: center;
+    margin-bottom: 18px;
+    text-shadow: 2px 2px 0 #000, 0 0 12px var(--torch);
+    letter-spacing: 2px;
+  }
+  .leaderboard-table {
+    width: 100%;
+    max-width: 580px;
+    margin: 0 auto 18px;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .leaderboard-table thead th {
+    background: linear-gradient(180deg, var(--stone) 0%, var(--floor) 100%);
+    color: var(--text-dim);
+    padding: 8px 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 11px;
+    border-bottom: 2px solid var(--stone-light);
+    text-align: left;
+  }
+  .leaderboard-table tbody td {
+    padding: 8px 6px;
+    border-bottom: 1px solid rgba(168,155,128,0.15);
+    color: var(--text);
+  }
+  .leaderboard-table tbody tr:nth-child(even) td {
+    background: rgba(0,0,0,0.25);
+  }
+  .leaderboard-table .rank { color: var(--gold); font-weight: bold; width: 36px; text-align: center; }
+  .leaderboard-table .lname { font-weight: bold; }
+  .leaderboard-table .lscore { color: var(--gold); font-weight: bold; text-align: right; }
+  .leaderboard-table .laccu, .leaderboard-table .lcombats { color: var(--text-dim); text-align: center; }
+  .leaderboard-table tr.you td {
+    background: rgba(212, 168, 54, 0.18);
+    box-shadow: inset 0 0 0 2px var(--gold);
+  }
+  .leaderboard-empty {
+    text-align: center;
+    color: var(--text-dim);
+    font-style: italic;
+    padding: 32px 16px;
+  }
+  .leaderboard-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .leaderboard-clear {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--stone-light);
+    border-radius: 4px;
+    padding: 8px 14px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .leaderboard-clear:hover {
+    color: var(--blood);
+    border-color: var(--blood);
+  }
+  
+  .gameover-title {
+    font-size: 36px;
+    color: var(--blood);
+    margin-bottom: 16px;
+    text-shadow: 3px 3px 0 #000;
+    letter-spacing: 4px;
+  }
+  
+  .gameover-flavor {
+    color: var(--text-dim);
+    font-style: italic;
+    margin-bottom: 32px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  .stat-box {
+    background: rgba(0,0,0,0.4);
+    border: 2px solid var(--stone);
+    border-radius: 6px;
+    padding: 16px 8px;
+  }
+  
+  .stat-value {
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--gold);
+  }
+  
+  .stat-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 4px;
+  }
+  
+  /* Notification de loot / event */
+  .toast {
+    position: absolute;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.9);
+    color: var(--gold);
+    padding: 12px 24px;
+    border: 2px solid var(--gold);
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    z-index: 100;
+    text-align: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.8);
+    animation: toastIn 0.4s, toastOut 0.4s 2s forwards;
+    pointer-events: none;
+  }
+  
+  @keyframes toastIn {
+    from { opacity: 0; transform: translate(-50%, -20px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+  }
+  
+  @keyframes toastOut {
+    to { opacity: 0; transform: translate(-50%, -20px); }
+  }
+  
+  /* Bouton mute */
+  #mute-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 200;
+    background: rgba(0,0,0,0.6);
+    border: 2px solid var(--stone-light);
+    color: var(--gold);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    font-family: inherit;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  #mute-btn:hover {
+    background: rgba(0,0,0,0.9);
+    border-color: var(--gold);
+    transform: scale(1.05);
+  }
+
+  #home-btn {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 200;
+    background: rgba(0,0,0,0.6);
+    border: 2px solid var(--stone-light);
+    color: var(--gold);
+    padding: 0 14px;
+    height: 40px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+  }
+  #home-btn:hover {
+    background: rgba(0,0,0,0.9);
+    border-color: var(--gold);
+  }
+  
+  /* Responsive */
+  @media (max-width: 600px) {
+    body { padding: 4px; padding-bottom: max(4px, env(safe-area-inset-bottom)); }
+    .torch { display: none; }
+    .hud, .question-box, .numpad, .choices, .feedback {
+      padding-left: 12px;
+      padding-right: 12px;
+      margin-left: 8px;
+      margin-right: 8px;
+    }
+    .hud { font-size: 12px; padding: 10px 12px; margin: 0; }
+    /* Padding scene réduit à 4px pour laisser la place à des sprites plus gros */
+    .scene { padding: 16px 4px 12px; min-height: 220px; }
+    .scene-text { font-size: 14px; }
+    /* Taille sprite adaptative : 180 max, sinon (viewport - marges) / 2.
+       Garantit que les 2 sprites tiennent côte à côte même sur iPhone SE (320). */
+    .sprite,
+    .sprite img,
+    .scene-actors {
+      --sprite-size: min(180px, calc((100vw - 32px) / 2));
+    }
+    .sprite { width: var(--sprite-size); height: var(--sprite-size); }
+    /* Pas d'override .sprite img height ici : la règle globale
+       calc(100% * var(--sprite-zoom)) suit automatiquement le conteneur. */
+    .scene-actors { min-height: var(--sprite-size); }
+    .question-box { margin: 12px 8px; padding: 12px 16px; }
+    .question-multi { font-size: 26px; }
+    .input-display { font-size: 22px; min-width: 100px; min-height: 42px; }
+    .numpad { margin: 0 8px 12px; padding: 12px; }
+    .numpad button { padding: 12px; font-size: 18px; }
+    .choice-btn { padding: 16px 12px; font-size: 14px; }
+    .game-title { font-size: 24px; }
+  }
+
+  /* Écrans courts (iPhone SE 568px, Android petits) — comprime la scène
+     et le numpad pour que le bouton OK reste visible sans scroll. */
+  @media (max-width: 600px) and (max-height: 720px) {
+    .scene { min-height: auto; padding: 8px 4px 6px; }
+    .scene-text { font-size: 12px; margin-bottom: 8px; min-height: 28px; line-height: 1.4; }
+    .sprite,
+    .sprite img,
+    .scene-actors {
+      --sprite-size: min(120px, calc((100vw - 32px) / 2));
+    }
+    .question-box { margin: 6px 8px; padding: 8px 12px; }
+    .question-text { font-size: 11px; margin-bottom: 2px; }
+    .question-multi { font-size: 20px; margin-bottom: 6px; }
+    .input-display { font-size: 18px; min-height: 32px; padding: 4px 10px; }
+    .feedback { font-size: 12px; margin: 4px 8px; min-height: 14px; }
+    .numpad { margin: 0 8px 6px; padding: 6px; gap: 5px; }
+    .numpad button { padding: 6px; font-size: 15px; }
+    .hud { font-size: 11px; padding: 5px 10px; }
+    .scene::after { height: 30px; } /* sol plus court */
+  }
+
+  /* Très court : iPhone SE 1ère gen, paysage smartphone. */
+  @media (max-width: 600px) and (max-height: 600px) {
+    .scene { min-height: auto; padding: 6px 4px 4px; }
+    .scene-text { font-size: 11px; margin-bottom: 4px; min-height: 24px; }
+    .sprite,
+    .sprite img,
+    .scene-actors {
+      --sprite-size: min(100px, calc((100vw - 32px) / 2));
+    }
+    .question-multi { font-size: 18px; }
+    .input-display { font-size: 16px; min-height: 28px; }
+    .numpad button { padding: 4px; font-size: 14px; }
+    .scene::after { display: none; } /* on coupe le sol pour gagner 30px */
+  }
+</style>
+</head>
+<body>
+
+<div id="game">
+  <div class="torch left"><div class="torch-glow"></div></div>
+  <div class="torch right"><div class="torch-glow"></div></div>
+  <a id="home-btn" href="../index.html" title="Retour au grimoire">← Grimoire</a>
+<button id="mute-btn" title="Activer/Couper le son">🔊</button>
+  <div id="game-content"></div>
+</div>
+
+<audio id="bgm" loop preload="auto">
+  <source src="assets/audio/music.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+(function() {
+  'use strict';
+
+  const root = document.getElementById('game-content');
+  const game = document.getElementById('game');
+
+  // ======== CONSTANTS ========
+  const TABLES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+  const FRAME_DURATION = 150;
+  const SPRITE_BASE = 'assets/tiny_rpg_characters_set/Characters';
+  const STORAGE_KEY = 'donjon-multi-prefs';
+
+  const ROOM_WEIGHTS = { combat: 0.55, chest: 0.20, choice: 0.15 /* shrine = reste */ };
+
+  const COMBAT_LOOT_MIN = 5,  COMBAT_LOOT_MAX = 15;
+  const CHEST_LOOT_MIN  = 10, CHEST_LOOT_MAX  = 25;
+  const TRAP_LOOT_MIN   = 15, TRAP_LOOT_MAX   = 35;
+  const TRAP_HEAL_CHANCE = 0.3;
+  const CHEST_TRAP_CHANCE = 0.5;
+
+  const MULT_B_MIN = 2, MULT_B_MAX = 12;
+  const MAX_INPUT_LENGTH = 3; // 12×12 = 144, trois chiffres requis
+  const SPRITE_ZOOM = 1.3; // doit matcher la var CSS --sprite-zoom
+
+  const TARGET_COMBATS = 10; // run gagnant = 10 monstres tués
+  const NAME_MAX_LENGTH = 12;
+  const LEADERBOARD_KEY = 'donjon-leaderboard';
+  const LEADERBOARD_MAX = 50;
+  const LEADERBOARD_DISPLAY = 10;
+  const HARDCORE_TIMEOUT_MS = 10000;
+  const MAX_NON_COMBAT_STREAK = 2; // au-delà, on force un combat
+  const HARDCORE_MULTIPLIER = 1.5;
+  const MAX_HP_CAP = 3; // plafond de PV max via sanctuaire
+
+  const SCORE = {
+    perCorrect: 100,
+    perWrong: 10,
+    perHp: 200,
+    speedBuckets: [
+      { maxMs: 3000,  bonus: 300 },
+      { maxMs: 6000,  bonus: 150 },
+      { maxMs: 10000, bonus: 50  },
+    ],
+  };
+
+  const TIMING = {
+    knightAttack: 400,
+    monsterDeath: 800,
+    deathFade: 1000,
+    monsterAttack: 400,
+    knightHurtRecover: 1200,
+    monsterHurtRecover: 800,
+    knightDeath: 1500,
+    chestSuccess: 1800,
+    chestFail: 1500,
+    chestNonTrapped: 1500,
+    doorTransition: 800,
+    shrineTransition: 1500,
+    hurtFlash: 400,
+    toastDuration: 2500,
+  };
+  
+  // Frames par animation. Si tu ajoutes un personnage, renseigne-le ici
+  // sinon spriteHTML retourne '' silencieusement.
+  const SPRITE_DATA = {
+    'Knight':              { Idle: 6, Attack01: 7, Hurt: 4, Death: 4 },
+    'Slime':               { Idle: 6, Attack01: 6, Hurt: 4, Death: 4 },
+    'Skeleton':            { Idle: 6, Attack01: 6, Hurt: 4, Death: 4 },
+    'Orc':                 { Idle: 6, Attack01: 6, Hurt: 4, Death: 4 },
+    'Skeleton Archer':     { Idle: 6, Hurt: 4, Death: 4 }, // pas d'Attack01 dans le pack d'assets
+    'Greatsword Skeleton': { Idle: 6, Attack01: 9, Hurt: 4, Death: 4 },
+    'Werewolf':            { Idle: 6, Attack01: 9, Hurt: 4, Death: 4 },
+    'Werebear':            { Idle: 6, Attack01: 9, Hurt: 4, Death: 4 },
+    'Elite Orc':         { Idle: 6, Attack01: 7, Hurt: 4, Death: 4 },
+    'Armored Orc':       { Idle: 6, Attack01: 7, Hurt: 4, Death: 4 },
+    'Wizard':            { Idle: 6, Attack01: 6, Hurt: 4, Death: 4 },
+  };
+  
+  // Monster pools by difficulty (HP)
+  const MONSTERS = {
+    easy:   [{ name: 'Slime', hp: 1, displayName: 'Slime' }, 
+             { name: 'Skeleton', hp: 1, displayName: 'Squelette' },
+             { name: 'Orc', hp: 1, displayName: 'Orc' }],
+    medium: [{ name: 'Skeleton Archer', hp: 2, displayName: 'Archer Squelette' },
+             { name: 'Greatsword Skeleton', hp: 2, displayName: 'Squelette à 2 mains' },
+             { name: 'Wizard', hp: 2, displayName: 'Sorcier Maléfique' }],
+    hard:   [{ name: 'Werewolf', hp: 3, displayName: 'Loup-Garou' },
+             { name: 'Werebear', hp: 3, displayName: 'Ours-Garou' },
+             { name: 'Elite Orc', hp: 3, displayName: 'Orc d\'Élite' },
+             { name: 'Armored Orc', hp: 3, displayName: 'Orc Cuirassé' }]
+  };
+  
+  // Room flavor texts
+  const ROOM_TEXTS = [
+    'Tu pénètres dans une salle aux murs humides...',
+    'Une odeur de moisi flotte dans l\'air glacial.',
+    'Des torches éteintes pendent aux murs de pierre.',
+    'Le sol craque sous tes pas dans le silence.',
+    'Une faible lueur éclaire les pierres usées.',
+    'Tu perçois un grondement lointain dans les couloirs.',
+    'Des os jonchent le sol de cette salle oubliée.',
+    'L\'écho de tes pas résonne sous la voûte sombre.',
+    'Une fresque ancienne s\'efface sur le mur.',
+    'Une eau noire suinte entre les dalles fissurées.'
+  ];
+  
+  const COMBAT_TEXTS = [
+    'Une silhouette menaçante surgit de l\'ombre !',
+    'Un grognement sauvage retentit !',
+    'Une créature t\'attaque !',
+    'Tes ennemis ne te laisseront pas passer !',
+    'Une présence hostile se dresse devant toi !'
+  ];
+  
+  const CHEST_TEXTS = [
+    'Un coffre en bois usé attire ton regard...',
+    'Un coffre orné de runes brille faiblement...',
+    'Un vieux coffre repose au centre de la salle...',
+    'Un coffre poussiéreux te défie d\'oser l\'ouvrir...'
+  ];
+  
+  const SHRINE_TEXTS = [
+    'Un autel ancien luit d\'une douce lumière...',
+    'Une statue brisée veille sur cette salle...',
+    'Une fontaine sacrée murmure paisiblement...'
+  ];
+  
+  const CHOICE_TEXTS = [
+    'Tu arrives à une intersection. Quel chemin prendre ?',
+    'Plusieurs portes s\'offrent à toi...',
+    'Le couloir se divise. Choisis ta voie.'
+  ];
+  
+  // Monster taunts during combat
+  const MONSTER_TAUNTS = [
+    'Résous ceci, mortel !',
+    'Réponds, ou péris !',
+    'Voyons ton intelligence !',
+    'Tu ne peux pas m\'échapper !',
+    'Cette énigme sera ta perte !'
+  ];
+  
+  // ======== PERSISTENCE ========
+  function loadPrefs() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+  function savePrefs() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        tables: [...state.selectedTables],
+        muted,
+        name: state.playerName || '',
+        hardcore: !!state.hardcore
+      }));
+    } catch (e) {}
+  }
+  const savedPrefs = loadPrefs();
+
+  function loadLeaderboard() {
+    try {
+      const raw = localStorage.getItem(LEADERBOARD_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) { return []; }
+  }
+  function saveLeaderboard(arr) {
+    try {
+      localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(arr.slice(0, LEADERBOARD_MAX)));
+    } catch (e) {}
+  }
+  function clearLeaderboardStorage() {
+    try { localStorage.removeItem(LEADERBOARD_KEY); } catch (e) {}
+  }
+  function addEntryToLeaderboard(entry) {
+    const lb = loadLeaderboard();
+    lb.push(entry);
+    lb.sort((a, b) => (b.score - a.score) || ((b.date || '').localeCompare(a.date || '')));
+    const trimmed = lb.slice(0, LEADERBOARD_MAX);
+    saveLeaderboard(trimmed);
+    const idx = trimmed.findIndex(e =>
+      e.score === entry.score && e.date === entry.date && e.name === entry.name
+    );
+    return { leaderboard: trimmed, rank: idx >= 0 ? idx + 1 : null };
+  }
+
+  // ======== SCORING ========
+  function getDifficultyMultiplier(tables) {
+    if (tables.length === TABLES.length) return 2.0;
+    if (tables.some(t => t >= 10)) return 1.6;
+    if (tables.some(t => t >= 6)) return 1.3;
+    return 1.0;
+  }
+  function getSpeedBonus(avgMs) {
+    if (!avgMs || avgMs <= 0) return 0;
+    for (const b of SCORE.speedBuckets) {
+      if (avgMs < b.maxMs) return b.bonus;
+    }
+    return 0;
+  }
+  function computeScore(player, tables, victory) {
+    const correct = player.correct;
+    const wrong = player.wrong;
+    const hpLeft = Math.max(0, player.hp);
+    const gold = player.gold;
+    const avgMs = player.answerTimes.length
+      ? player.answerTimes.reduce((a, b) => a + b, 0) / player.answerTimes.length
+      : 0;
+    const speedBonus = getSpeedBonus(avgMs);
+    const multiplier = getDifficultyMultiplier(tables);
+    const hardcoreMult = state.hardcore ? HARDCORE_MULTIPLIER : 1;
+    const base =
+      correct * SCORE.perCorrect +
+      wrong * SCORE.perWrong +
+      hpLeft * SCORE.perHp +
+      gold +
+      speedBonus;
+    const total = Math.round(base * multiplier * hardcoreMult);
+    return {
+      correct, wrong, hpLeft, gold,
+      avgMs: Math.round(avgMs),
+      speedBonus, multiplier, hardcoreMult, base, total,
+      victory,
+      hardcore: !!state.hardcore,
+      combatsWon: player.combatsWon,
+      tables: tables.slice().sort((a, b) => a - b),
+    };
+  }
+
+  // ======== TIMER QUESTION (mode Hardcore) ========
+  let questionTimerId = null;
+  let questionDeadline = 0;
+
+  function startQuestion() {
+    state.player.answerStartMs = Date.now();
+    startQuestionTimer();
+  }
+  function startQuestionTimer() {
+    clearQuestionTimer();
+    if (!state.hardcore) return;
+    questionDeadline = Date.now() + HARDCORE_TIMEOUT_MS;
+    updateTimerUI();
+    questionTimerId = setInterval(tickTimer, 100);
+  }
+  function clearQuestionTimer() {
+    if (questionTimerId) {
+      clearInterval(questionTimerId);
+      questionTimerId = null;
+    }
+  }
+  function tickTimer() {
+    if (!isNumpadActive()) { clearQuestionTimer(); return; }
+    updateTimerUI();
+    if (Date.now() >= questionDeadline && !state.locked) {
+      clearQuestionTimer();
+      timeoutAnswer();
+    }
+  }
+  function updateTimerUI() {
+    const numEl = document.querySelector('.timer-num');
+    if (!numEl) return;
+    const remaining = Math.max(0, questionDeadline - Date.now());
+    const seconds = Math.ceil(remaining / 1000);
+    numEl.textContent = seconds;
+    const wrap = numEl.closest('.question-timer');
+    if (wrap) wrap.classList.toggle('danger', seconds <= 5);
+  }
+  function timeoutAnswer() {
+    if (state.locked) return;
+    const multi = getActiveMulti();
+    if (!multi) return;
+    multi.input = '';
+    updateInputDisplay();
+    state.player.answerStartMs = 0; // ne compte pas la vitesse
+    if (state.screen === 'combat') resolveCombatAnswer(false, true);
+    else if (state.screen === 'chest') resolveChestAnswer(false, true);
+  }
+
+  function recordAnswerTime() {
+    if (!state.player.answerStartMs) return;
+    const dt = Date.now() - state.player.answerStartMs;
+    if (dt >= 0 && dt < 5 * 60 * 1000) state.player.answerTimes.push(dt);
+    state.player.answerStartMs = 0;
+  }
+
+  // ======== STATE ========
+  const state = {
+    screen: 'setup',
+    selectedTables: new Set(
+      savedPrefs && Array.isArray(savedPrefs.tables) && savedPrefs.tables.length
+        ? savedPrefs.tables.filter(t => TABLES.includes(t))
+        : TABLES
+    ),
+    playerName: (savedPrefs && typeof savedPrefs.name === 'string') ? savedPrefs.name : '',
+    nameInput: '',
+    hardcore: !!(savedPrefs && savedPrefs.hardcore),
+    player: makeFreshPlayer(),
+    room: null,
+    combat: null,
+    chest: null,
+    feedbackMsg: '',
+    feedbackType: '',
+    locked: false,
+    lastResult: null, // breakdown du dernier run (pour victoire/gameover)
+    leaderboardHighlightIdx: -1,
+    lastRoomType: null,    // évite 2 mêmes types non-combat d'affilée
+    nonCombatStreak: 0     // évite des séries trop longues sans combat
+  };
+  if (state.selectedTables.size === 0) state.selectedTables = new Set(TABLES);
+
+  function makeFreshPlayer() {
+    return {
+      hp: 3, maxHp: 3, gold: 0,
+      rooms: 0,
+      combatsWon: 0,
+      correct: 0,
+      wrong: 0,
+      answerTimes: [],   // ms par bonne ou mauvaise réponse
+      answerStartMs: 0,  // timestamp d'apparition de la question courante
+    };
+  }
+
+  // ======== TIMERS ========
+  // Registre central : tous les setTimeout passent par scheduleTimer pour
+  // pouvoir être annulés en bloc lors d'une transition d'écran ou d'un restart.
+  const timers = new Set();
+  function scheduleTimer(fn, ms) {
+    const id = setTimeout(() => { timers.delete(id); fn(); }, ms);
+    timers.add(id);
+    return id;
+  }
+  function clearAllTimers() {
+    timers.forEach(id => clearTimeout(id));
+    timers.clear();
+    clearQuestionTimer();
+  }
+
+  // ======== UTILITIES ========
+  function pick(arr) {
+    if (!arr || arr.length === 0) return null;
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+  function rnd(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+  function getActiveMulti() {
+    if (state.screen === 'combat' && state.combat) return state.combat.multi;
+    if (state.screen === 'chest' && state.chest && state.chest.opened && state.chest.trapped) {
+      return state.chest.multi;
+    }
+    return null;
+  }
+  function isNumpadActive() { return getActiveMulti() !== null; }
+
+  function newMultiplication() {
+    // Les DEUX facteurs viennent des tables choisies pour respecter la sélection
+    // (cocher 4,5,6,7 ne doit pas faire apparaître 11). Cas limite : si une
+    // seule table cochée, on retombe sur b ∈ [2..12] sinon on aurait que N×N.
+    const tables = [...state.selectedTables];
+    const a = pick(tables);
+    const b = tables.length >= 2 ? pick(tables) : rnd(MULT_B_MIN, MULT_B_MAX);
+    return { a, b, answer: a * b, input: '' };
+  }
+
+  function pickMonster() {
+    // Aligné avec README : facile 1-2, moyen 3-7, dur 8+
+    let pool;
+    if (state.player.rooms < 3) {
+      pool = MONSTERS.easy;
+    } else if (state.player.rooms < 8) {
+      pool = Math.random() < 0.5 ? MONSTERS.easy : MONSTERS.medium;
+    } else if (state.player.rooms < 12) {
+      pool = Math.random() < 0.5 ? MONSTERS.medium : MONSTERS.hard;
+    } else {
+      pool = Math.random() < 0.3 ? MONSTERS.medium : MONSTERS.hard;
+    }
+    if (!pool || pool.length === 0) pool = MONSTERS.easy;
+    const m = pick(pool);
+    return { ...m, currentHp: m.hp };
+  }
+
+  function clearTransientState() {
+    state.combat = null;
+    state.chest = null;
+    state.room = null;
+    state.feedbackMsg = '';
+    state.feedbackType = '';
+  }
+
+  function nextRoom() {
+    clearAllTimers();
+    clearToast();
+    state.player.rooms++;
+    state.locked = false;
+    clearTransientState();
+
+    const r = Math.random();
+    let type;
+    if (r < ROOM_WEIGHTS.combat) type = 'combat';
+    else if (r < ROOM_WEIGHTS.combat + ROOM_WEIGHTS.chest) type = 'chest';
+    else if (r < ROOM_WEIGHTS.combat + ROOM_WEIGHTS.chest + ROOM_WEIGHTS.choice) type = 'choice';
+    else type = 'shrine';
+
+    // 1) Évite 2 fois la même salle non-combat d'affilée (2 coffres / 2 portes).
+    // 2) Évite plus de N non-combats consécutifs — passé MAX_NON_COMBAT_STREAK,
+    //    on force un combat pour garder un rythme math régulier.
+    if (type !== 'combat') {
+      if (type === state.lastRoomType) type = 'combat';
+      else if (state.nonCombatStreak >= MAX_NON_COMBAT_STREAK) type = 'combat';
+    }
+    state.lastRoomType = type;
+    state.nonCombatStreak = type === 'combat' ? 0 : state.nonCombatStreak + 1;
+
+    if (type === 'combat') {
+      state.combat = {
+        monster: pickMonster(),
+        multi: newMultiplication(),
+        text: pick(COMBAT_TEXTS),
+        taunt: pick(MONSTER_TAUNTS)
+      };
+      state.screen = 'combat';
+    } else if (type === 'chest') {
+      const trapped = Math.random() < CHEST_TRAP_CHANCE;
+      state.chest = {
+        opened: false,
+        trapped,
+        multi: trapped ? newMultiplication() : null,
+        text: pick(CHEST_TEXTS)
+      };
+      state.screen = 'chest';
+    } else if (type === 'choice') {
+      state.room = { text: pick(CHOICE_TEXTS), doors: rnd(2, 3) };
+      state.screen = 'choice';
+    } else {
+      state.room = { text: pick(SHRINE_TEXTS) };
+      state.screen = 'shrine';
+    }
+    render();
+    // Timer hardcore : démarre seulement si on est en combat (pour les autres
+    // salles, pas de question donc pas de timer).
+    if (state.screen === 'combat') startQuestion();
+  }
+
+  // ======== ANIMATIONS ========
+  // rAF auto-arrêté quand aucun .sprite n'est dans le DOM (économie batterie/CPU
+  // sur les écrans setup et gameover).
+  let rafId = null;
+  let lastFrameTime = 0;
+  const spriteFrames = new Map();
+  const spriteOnce = new Map();
+
+  function animationTick(timestamp) {
+    rafId = null;
+    const sprites = document.querySelectorAll('.sprite');
+    if (sprites.length === 0) return;
+
+    if (!lastFrameTime || timestamp - lastFrameTime >= FRAME_DURATION) {
+      lastFrameTime = timestamp;
+      sprites.forEach(sprite => {
+        const id = sprite.dataset.spriteId;
+        if (!id) return;
+        const totalFrames = parseInt(sprite.dataset.frames, 10);
+        if (!totalFrames) return;
+
+        const onceData = spriteOnce.get(id);
+        let currentFrame = spriteFrames.get(id) || 0;
+
+        if (onceData && onceData.isOnce) {
+          currentFrame++;
+          if (currentFrame >= totalFrames) {
+            currentFrame = totalFrames - 1;
+            spriteOnce.delete(id);
+            if (onceData.onComplete) onceData.onComplete();
+          }
+        } else {
+          currentFrame = (currentFrame + 1) % totalFrames;
+        }
+
+        spriteFrames.set(id, currentFrame);
+        applySpriteFrame(sprite, currentFrame);
+      });
+    }
+    rafId = requestAnimationFrame(animationTick);
+  }
+
+  function ensureAnimationRunning() {
+    if (rafId !== null) return;
+    if (document.querySelectorAll('.sprite').length === 0) return;
+    lastFrameTime = 0;
+    rafId = requestAnimationFrame(animationTick);
+  }
+
+  /* Centre la frame zoomée dans le conteneur :
+     l'image fait zoom × largeur du conteneur en hauteur, donc chaque frame
+     fait zoom × largeur en pixels horizontalement. xOffset = (1 - zoom) / 2 * w
+     décale d'un demi-frame de zoom pour recentrer. */
+  function applySpriteFrame(sprite, currentFrame) {
+    const img = sprite.querySelector('img');
+    if (!img) return;
+    const size = sprite.offsetWidth;
+    if (!size) return;
+    const frameStride = size * SPRITE_ZOOM;
+    const xOffset = (size - frameStride) / 2;
+    img.style.transform = `translateX(${xOffset - currentFrame * frameStride}px)`;
+  }
+
+  function pruneSpriteMaps() {
+    const live = new Set();
+    document.querySelectorAll('.sprite').forEach(s => {
+      if (s.dataset.spriteId) live.add(s.dataset.spriteId);
+    });
+    [...spriteFrames.keys()].forEach(k => { if (!live.has(k)) spriteFrames.delete(k); });
+    [...spriteOnce.keys()].forEach(k => { if (!live.has(k)) spriteOnce.delete(k); });
+  }
+
+  function spriteHTML(id, character, anim) {
+    const data = SPRITE_DATA[character];
+    if (!data || !data[anim]) return '';
+    const frames = data[anim];
+    const path = `${SPRITE_BASE}/${character}/${character}/${character}-${anim}.png`;
+    spriteFrames.set(id, 0);
+    return `<div class="sprite" data-sprite-id="${id}" data-frames="${frames}" data-character="${character}" data-anim="${anim}">
+      <img src="${path}" alt="${character}">
+    </div>`;
+  }
+
+  function changeSprite(id, character, anim, isOnce, onComplete) {
+    const sprite = document.querySelector(`[data-sprite-id="${id}"]`);
+    if (!sprite) return;
+    const data = SPRITE_DATA[character];
+    if (!data) return;
+    // Fallback Idle si l'animation demandée n'existe pas pour ce perso
+    // (ex. Skeleton Archer sans Attack01) — évite un 404 et un sprite "disparu".
+    if (!data[anim]) {
+      anim = 'Idle';
+      isOnce = false;
+      onComplete = null;
+    }
+    const frames = data[anim];
+    sprite.dataset.frames = frames;
+    sprite.dataset.character = character;
+    sprite.dataset.anim = anim;
+    spriteFrames.set(id, 0);
+    if (isOnce) spriteOnce.set(id, { isOnce: true, totalFrames: frames, onComplete });
+    else spriteOnce.delete(id);
+    const img = sprite.querySelector('img');
+    img.src = `${SPRITE_BASE}/${character}/${character}/${character}-${anim}.png`;
+    applySpriteFrame(sprite, 0);
+  }
+
+  // ======== AUDIO ========
+  const bgm = document.getElementById('bgm');
+  bgm.volume = 0.35;
+  let muted = !!(savedPrefs && savedPrefs.muted);
+
+  const SFX_VOLUME = { sword: 0.5, hurt: 0.6, death: 0.5, magic: 0.6 };
+  const sfxPool = {};
+  Object.keys(SFX_VOLUME).forEach(name => {
+    const a = new Audio('assets/audio/' + name + '.mp3');
+    a.preload = 'auto';
+    a.volume = SFX_VOLUME[name];
+    sfxPool[name] = a;
+  });
+
+  function sfx(name) {
+    if (muted) return;
+    const proto = sfxPool[name];
+    if (!proto) return;
+    const a = proto.cloneNode();
+    a.volume = SFX_VOLUME[name] || 0.5;
+    a.play().catch(() => {});
+  }
+
+  function startMusic() {
+    if (!muted) bgm.play().catch(() => {});
+  }
+
+  function applyMuteUI() {
+    const btn = document.getElementById('mute-btn');
+    if (!btn) return;
+    btn.textContent = muted ? '🔇' : '🔊';
+    btn.setAttribute('aria-label', muted ? 'Activer le son' : 'Couper le son');
+    btn.setAttribute('aria-pressed', muted ? 'true' : 'false');
+  }
+
+  function toggleMute() {
+    muted = !muted;
+    if (muted) bgm.pause(); else bgm.play().catch(() => {});
+    applyMuteUI();
+    savePrefs();
+  }
+
+  document.getElementById('mute-btn').addEventListener('click', toggleMute);
+  applyMuteUI();
+
+  // ======== ACTIONS ========
+  function selectTable(t) {
+    if (state.selectedTables.has(t)) {
+      if (state.selectedTables.size > 1) state.selectedTables.delete(t);
+    } else {
+      state.selectedTables.add(t);
+    }
+    savePrefs();
+    render();
+  }
+
+  function goToNameScreen() {
+    state.screen = 'name';
+    state.nameInput = state.playerName || '';
+    state.lastResult = null;
+    state.leaderboardHighlightIdx = -1;
+    render();
+  }
+
+  function submitName() {
+    const v = (state.nameInput || '').trim().slice(0, NAME_MAX_LENGTH);
+    if (!v) return;
+    state.playerName = v;
+    savePrefs();
+    startRun();
+  }
+
+  function startRun() {
+    state.player = makeFreshPlayer();
+    state.lastResult = null;
+    state.leaderboardHighlightIdx = -1;
+    state.lastRoomType = null;
+    state.nonCombatStreak = 0;
+    clearAllTimers();
+    clearToast();
+    startMusic();
+    nextRoom();
+  }
+
+  function inputDigit(d) {
+    if (state.locked) return;
+    const multi = getActiveMulti();
+    if (!multi) return;
+    if (multi.input.length >= MAX_INPUT_LENGTH) return;
+    if (multi.input === '' && d === '0') return; // pas de zéro initial
+    multi.input += d;
+    updateInputDisplay();
+  }
+
+  function backspaceInput() {
+    if (state.locked) return;
+    const multi = getActiveMulti();
+    if (!multi) return;
+    multi.input = multi.input.slice(0, -1);
+    updateInputDisplay();
+  }
+
+  function updateInputDisplay() {
+    const display = document.querySelector('.input-display');
+    if (!display) return;
+    const multi = getActiveMulti();
+    if (!multi) return;
+    if (multi.input === '') {
+      display.textContent = '?';
+      display.classList.add('empty');
+    } else {
+      display.textContent = multi.input;
+      display.classList.remove('empty');
+    }
+  }
+
+  function validateAnswer() {
+    if (state.locked) return;
+    const multi = getActiveMulti();
+    if (!multi || multi.input === '') return;
+    clearQuestionTimer(); // arrête le décompte hardcore dès la soumission
+    const correct = parseInt(multi.input, 10) === multi.answer;
+    if (state.screen === 'combat') resolveCombatAnswer(correct);
+    else if (state.screen === 'chest') resolveChestAnswer(correct);
+  }
+
+  function resolveCombatAnswer(correct, isTimeout) {
+    state.locked = true;
+    const c = state.combat;
+    recordAnswerTime();
+    if (correct) state.player.correct++; else state.player.wrong++;
+
+    if (correct) {
+      sfx('sword');
+      changeSprite('knight-sprite', 'Knight', 'Attack01', true, () => {
+        changeSprite('knight-sprite', 'Knight', 'Idle', false);
+      });
+
+      scheduleTimer(() => {
+        c.monster.currentHp--;
+        const monsterEl = document.querySelector('.actor.monster');
+
+        if (c.monster.currentHp <= 0) {
+          sfx('death');
+          changeSprite('monster-sprite', c.monster.name, 'Death', true);
+          showFeedback('🗡️ ' + c.monster.displayName + ' vaincu !', 'success');
+          state.player.combatsWon++;
+          state.player.gold += rnd(COMBAT_LOOT_MIN, COMBAT_LOOT_MAX);
+          updateHud();
+          updateMonsterHp();
+          scheduleTimer(() => {
+            if (monsterEl) monsterEl.classList.add('dying');
+            scheduleTimer(() => { advanceAfterKill(); }, TIMING.deathFade);
+          }, TIMING.monsterDeath);
+        } else {
+          changeSprite('monster-sprite', c.monster.name, 'Hurt', true, () => {
+            changeSprite('monster-sprite', c.monster.name, 'Idle', false);
+          });
+          if (monsterEl) {
+            monsterEl.classList.add('hurt');
+            scheduleTimer(() => monsterEl.classList.remove('hurt'), TIMING.hurtFlash);
+          }
+          showFeedback('💥 Coup au but ! Continue !', 'success');
+          updateMonsterHp();
+          c.multi = newMultiplication();
+          updateInputDisplay();
+          updateQuestionDisplay();
+          scheduleTimer(() => { state.locked = false; focusFirstNumpad(); startQuestion(); }, TIMING.monsterHurtRecover);
+        }
+      }, TIMING.knightAttack);
+    } else {
+      sfx('sword');
+      changeSprite('monster-sprite', c.monster.name, 'Attack01', true, () => {
+        if (c.monster.currentHp > 0) changeSprite('monster-sprite', c.monster.name, 'Idle', false);
+      });
+
+      scheduleTimer(() => {
+        state.player.hp--;
+        sfx('hurt');
+        showFeedback((isTimeout ? '⏰ Trop tard !' : '❌ Faux !') + ' La réponse était ' + c.multi.answer, 'fail');
+        const knightEl = document.querySelector('.actor.knight');
+
+        if (state.player.hp <= 0) {
+          sfx('death');
+          changeSprite('knight-sprite', 'Knight', 'Death', true);
+          updateHud();
+          scheduleTimer(() => { endRun(false); }, TIMING.knightDeath);
+        } else {
+          changeSprite('knight-sprite', 'Knight', 'Hurt', true, () => {
+            changeSprite('knight-sprite', 'Knight', 'Idle', false);
+          });
+          if (knightEl) {
+            knightEl.classList.add('hurt');
+            scheduleTimer(() => knightEl.classList.remove('hurt'), TIMING.hurtFlash);
+          }
+          updateHud();
+          c.multi = newMultiplication();
+          updateInputDisplay();
+          updateQuestionDisplay();
+          scheduleTimer(() => { state.locked = false; focusFirstNumpad(); startQuestion(); }, TIMING.knightHurtRecover);
+        }
+      }, TIMING.monsterAttack);
+    }
+  }
+
+  function advanceAfterKill() {
+    if (state.player.combatsWon >= TARGET_COMBATS) {
+      endRun(true);
+    } else {
+      nextRoom();
+    }
+  }
+
+  function endRun(victory) {
+    clearAllTimers();
+    clearToast();
+    const tables = [...state.selectedTables];
+    const breakdown = computeScore(state.player, tables, victory);
+    const entry = {
+      name: state.playerName || '???',
+      score: breakdown.total,
+      victory,
+      hardcore: !!state.hardcore,
+      combatsWon: state.player.combatsWon,
+      correct: state.player.correct,
+      wrong: state.player.wrong,
+      hpLeft: Math.max(0, state.player.hp),
+      gold: state.player.gold,
+      avgAnswerMs: breakdown.avgMs,
+      tables: breakdown.tables,
+      date: new Date().toISOString(),
+    };
+    const { rank } = addEntryToLeaderboard(entry);
+    state.lastResult = { breakdown, entry, rank };
+    state.screen = victory ? 'victory' : 'gameover';
+    render();
+  }
+
+  function resolveChestAnswer(correct, isTimeout) {
+    state.locked = true;
+    recordAnswerTime();
+    if (correct) state.player.correct++; else state.player.wrong++;
+
+    if (correct) {
+      sfx('magic');
+      const loot = rnd(TRAP_LOOT_MIN, TRAP_LOOT_MAX);
+      state.player.gold += loot;
+      const heal = Math.random() < TRAP_HEAL_CHANCE && state.player.hp < state.player.maxHp;
+      if (heal) state.player.hp++;
+      let msg = '✨ Trésor : +' + loot + ' or';
+      if (heal) msg += ' et +1 PV !';
+      showFeedback(msg, 'success');
+      showToast('🏆 ' + msg);
+      updateHud();
+      scheduleTimer(() => { nextRoom(); }, TIMING.chestSuccess);
+    } else {
+      sfx('hurt');
+      state.player.hp--;
+      showFeedback((isTimeout ? '⏰ Trop tard !' : '💥 Piège !') + ' La réponse était ' + state.chest.multi.answer, 'fail');
+      if (state.player.hp <= 0) {
+        sfx('death');
+        scheduleTimer(() => { endRun(false); }, TIMING.knightDeath);
+      } else {
+        scheduleTimer(() => { nextRoom(); }, TIMING.chestFail);
+      }
+    }
+  }
+
+  function openChest() {
+    if (state.locked) return;
+    if (state.chest.trapped) {
+      state.chest.opened = true;
+      render();
+      startQuestion();
+    } else {
+      sfx('magic');
+      state.locked = true;
+      const loot = rnd(CHEST_LOOT_MIN, CHEST_LOOT_MAX);
+      state.player.gold += loot;
+      showToast('🏆 +' + loot + ' or !');
+      updateHud();
+      scheduleTimer(() => { nextRoom(); }, TIMING.chestNonTrapped);
+    }
+  }
+
+  function skipChest() { nextRoom(); }
+
+  function chooseDoor(idx) {
+    if (state.locked) return;
+    state.locked = true;
+    const labels = { 0: 'de gauche', 1: 'du milieu', 2: 'de droite' };
+    showToast('🚪 Tu prends la porte ' + (labels[idx] || ''));
+    scheduleTimer(() => { nextRoom(); }, TIMING.doorTransition);
+  }
+
+  function useShrine() {
+    if (state.locked) return;
+    state.locked = true;
+    sfx('magic');
+    if (state.player.hp < state.player.maxHp) {
+      state.player.hp = state.player.maxHp;
+      showToast('💚 Tes blessures sont soignées !');
+    } else if (state.player.maxHp < MAX_HP_CAP) {
+      state.player.maxHp++;
+      state.player.hp++;
+      showToast('💪 Ton courage grandit ! +1 PV max');
+    } else {
+      // Au plafond PV : prière purement symbolique, pas de bonus matériel.
+      showToast('🙏 L\'autel accueille tes prières.');
+    }
+    updateHud();
+    scheduleTimer(() => { nextRoom(); }, TIMING.shrineTransition);
+  }
+
+  function skipShrine() { nextRoom(); }
+
+  function showFeedback(msg, type) {
+    state.feedbackMsg = msg;
+    state.feedbackType = type;
+    const fb = document.querySelector('.feedback');
+    if (fb) {
+      fb.textContent = msg;
+      fb.className = 'feedback ' + type;
+    }
+  }
+
+  function showToast(msg) {
+    clearToast();
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.setAttribute('role', 'status');
+    toast.textContent = msg;
+    game.appendChild(toast);
+    scheduleTimer(() => { toast.remove(); }, TIMING.toastDuration);
+  }
+  function clearToast() {
+    const old = game.querySelector('.toast');
+    if (old) old.remove();
+  }
+
+  function updateHud() {
+    const hud = document.querySelector('.hud');
+    if (hud) hud.innerHTML = renderHud();
+  }
+  function updateMonsterHp() {
+    const el = document.querySelector('.monster-hp');
+    if (el && state.combat) el.innerHTML = '❤️'.repeat(state.combat.monster.currentHp);
+  }
+  function updateQuestionDisplay() {
+    const el = document.querySelector('.question-multi');
+    if (!el || !state.combat) return;
+    // innerHTML pour préserver/recréer le span timer hardcore (textContent
+    // l'effacerait et la mise à jour suivante ne trouverait plus .timer-num).
+    const timer = state.hardcore
+      ? `<span class="question-timer" aria-label="Temps restant"><span class="timer-icon">⏰</span> <span class="timer-num">${HARDCORE_TIMEOUT_MS / 1000}</span>s</span>`
+      : '';
+    el.innerHTML = state.combat.multi.a + ' × ' + state.combat.multi.b + ' = ?' + timer;
+  }
+
+  // ======== RENDER ========
+  function renderHud() {
+    const hearts = '❤️'.repeat(state.player.hp) + '🖤'.repeat(state.player.maxHp - state.player.hp);
+    return `
+      <div class="hud-item hp" aria-label="Points de vie : ${state.player.hp} sur ${state.player.maxHp}">
+        <span class="icon">PV</span>
+        <span class="value hp-hearts">${hearts}</span>
+      </div>
+      <div class="hud-item gold" aria-label="${state.player.gold} pièces d'or">
+        <span class="icon">💰</span>
+        <span class="value">${state.player.gold}</span>
+      </div>
+      <div class="hud-item" aria-label="Salle ${state.player.rooms}">
+        <span class="icon">🏛️</span>
+        <span class="value">Salle ${state.player.rooms}</span>
+      </div>
+      <div class="hud-item" aria-label="${state.player.combatsWon} sur ${TARGET_COMBATS} combats remportés">
+        <span class="icon">⚔️</span>
+        <span class="value">${state.player.combatsWon}/${TARGET_COMBATS}</span>
+      </div>
+    `;
+  }
+
+  function renderSetup() {
+    return `
+      <div class="setup-screen">
+        <h1 class="game-title">⚔️ LE DONJON ⚔️<br>DES MULTIPLICATIONS</h1>
+        <p class="game-subtitle">Choisis les tables que tu veux affronter</p>
+        <div class="tables-grid" role="group" aria-label="Tables à pratiquer">
+          ${TABLES.map(t => `
+            <button class="table-btn ${state.selectedTables.has(t) ? 'selected' : ''}" data-action="select-table" data-table="${t}" aria-pressed="${state.selectedTables.has(t)}">
+              Table de ${t}
+            </button>
+          `).join('')}
+        </div>
+        <button class="hardcore-toggle ${state.hardcore ? 'active' : ''}" data-action="toggle-hardcore" type="button" role="checkbox" aria-checked="${state.hardcore}">
+          <span class="hc-icon">🔥</span>
+          <span class="hc-text">
+            Mode Hardcore
+            <span class="hc-sub">${HARDCORE_TIMEOUT_MS / 1000}s par réponse, sinon −1 PV — score × ${HARDCORE_MULTIPLIER.toFixed(1)}</span>
+          </span>
+        </button>
+        <button class="start-btn" data-action="start" ${state.selectedTables.size === 0 ? 'disabled' : ''}>
+          ENTRER DANS LE DONJON
+        </button>
+      </div>
+    `;
+  }
+
+  function renderCombat() {
+    const c = state.combat;
+    const monsterHearts = '❤️'.repeat(c.monster.currentHp);
+    return `
+      <div class="hud">${renderHud()}</div>
+      <div class="scene">
+        <div class="scene-text">${c.text}<br><span class="taunt">Le ${c.monster.displayName} grogne : « ${c.taunt} »</span></div>
+        <div class="scene-actors">
+          <div class="actor knight">${spriteHTML('knight-sprite', 'Knight', 'Idle')}</div>
+          <div class="actor monster flipped">
+            <div class="sprite flipped" data-sprite-id="monster-sprite" data-frames="${SPRITE_DATA[c.monster.name].Idle}">
+              <img src="${SPRITE_BASE}/${c.monster.name}/${c.monster.name}/${c.monster.name}-Idle.png" alt="${c.monster.displayName}">
+            </div>
+            <div class="actor-hp monster-hp" aria-label="Vie du monstre : ${c.monster.currentHp}">${monsterHearts}</div>
+          </div>
+        </div>
+      </div>
+      <div class="question-box">
+        <div class="question-text">⚔️ COMBAT — Réponds vite !</div>
+        <div class="question-multi" aria-live="polite">${c.multi.a} × ${c.multi.b} = ?${state.hardcore ? `<span class="question-timer" aria-label="Temps restant"><span class="timer-icon">⏰</span> <span class="timer-num">${HARDCORE_TIMEOUT_MS / 1000}</span>s</span>` : ''}</div>
+        <div class="input-display empty" aria-live="polite">?</div>
+      </div>
+      <div class="feedback ${state.feedbackType}" aria-live="polite">${state.feedbackMsg}</div>
+      ${renderNumpad()}
+    `;
+  }
+
+  function renderChest() {
+    const ch = state.chest;
+    if (!ch.opened) {
+      return `
+        <div class="hud">${renderHud()}</div>
+        <div class="scene">
+          <div class="scene-text">${ch.text}</div>
+          <div class="chest-display"><div class="chest-emoji">🎁</div></div>
+        </div>
+        <div class="choices">
+          <button class="choice-btn" data-action="open-chest"><span class="choice-icon">🔓</span>Ouvrir le coffre</button>
+          <button class="choice-btn" data-action="skip-chest"><span class="choice-icon">🚶</span>Passer son chemin</button>
+        </div>
+      `;
+    }
+    return `
+      <div class="hud">${renderHud()}</div>
+      <div class="scene">
+        <div class="scene-text">⚠️ Le coffre était piégé ! Une rune magique t'interroge :</div>
+        <div class="chest-display"><div class="chest-emoji">📦💀</div></div>
+      </div>
+      <div class="question-box">
+        <div class="question-text">🪤 PIÈGE — Résous pour survivre</div>
+        <div class="question-multi" aria-live="polite">${ch.multi.a} × ${ch.multi.b} = ?${state.hardcore ? `<span class="question-timer" aria-label="Temps restant"><span class="timer-icon">⏰</span> <span class="timer-num">${HARDCORE_TIMEOUT_MS / 1000}</span>s</span>` : ''}</div>
+        <div class="input-display empty" aria-live="polite">?</div>
+      </div>
+      <div class="feedback ${state.feedbackType}" aria-live="polite">${state.feedbackMsg}</div>
+      ${renderNumpad()}
+    `;
+  }
+
+  function renderChoice() {
+    const r = state.room;
+    const labels = ['Gauche', 'Centre', 'Droite'];
+    const doors = r.doors === 2 ? [0, 2] : [0, 1, 2];
+    return `
+      <div class="hud">${renderHud()}</div>
+      <div class="scene">
+        <div class="scene-text">${r.text}</div>
+        <div class="scene-actors">
+          <div class="actor knight">${spriteHTML('knight-sprite', 'Knight', 'Idle')}</div>
+        </div>
+      </div>
+      <div class="choices">
+        ${doors.map(idx => `
+          <button class="choice-btn door-btn" data-action="choose-door" data-door="${idx}">
+            <span class="choice-icon">🚪</span>
+            Porte ${labels[idx]}
+          </button>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function renderShrine() {
+    return `
+      <div class="hud">${renderHud()}</div>
+      <div class="scene">
+        <div class="scene-text">${state.room.text}</div>
+        <div class="chest-display"><div class="chest-emoji">⛩️</div></div>
+      </div>
+      <div class="choices">
+        <button class="choice-btn" data-action="use-shrine"><span class="choice-icon">🙏</span>Prier</button>
+        <button class="choice-btn" data-action="skip-shrine"><span class="choice-icon">🚶</span>Passer</button>
+      </div>
+    `;
+  }
+
+  function renderNumpad() {
+    const digits = [1,2,3,4,5,6,7,8,9].map(d =>
+      `<button data-action="digit" data-digit="${d}" aria-label="Chiffre ${d}">${d}</button>`
+    ).join('');
+    return `
+      <div class="numpad" role="group" aria-label="Pavé numérique">
+        ${digits}
+        <button class="clear" data-action="backspace" aria-label="Effacer un chiffre">←</button>
+        <button data-action="digit" data-digit="0" aria-label="Chiffre 0">0</button>
+        <button class="ok" data-action="ok" aria-label="Valider la réponse">OK</button>
+      </div>
+    `;
+  }
+
+  function renderName() {
+    const v = (state.nameInput || '').replace(/"/g, '&quot;');
+    const canStart = (state.nameInput || '').trim().length > 0;
+    return `
+      <div class="name-screen">
+        <h1>⚔️ HÉROS, QUI ES-TU ?</h1>
+        <p>Entre ton prénom (12 lettres max)</p>
+        <input class="name-input" id="player-name" name="player-name" type="text" maxlength="${NAME_MAX_LENGTH}" value="${v}" data-action="name-input" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="Ton prénom">
+        <div>
+          <button class="start-btn" data-action="submit-name" ${canStart ? '' : 'disabled'}>EN AVANT</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function scoreBreakdownHTML(b) {
+    const avgSec = b.avgMs ? (b.avgMs / 1000).toFixed(1) + 's' : '—';
+    const hcRow = (b.hardcoreMult && b.hardcoreMult > 1)
+      ? `<div class="score-row mult"><span class="label">🔥 Mode Hardcore</span><span class="value">× ${b.hardcoreMult.toFixed(1)}</span></div>`
+      : '';
+    return `
+      <div class="score-breakdown">
+        <div class="score-row"><span class="label">Bonnes réponses (${b.correct} × ${SCORE.perCorrect})</span><span class="value">+${b.correct * SCORE.perCorrect}</span></div>
+        <div class="score-row"><span class="label">Tentatives ratées (${b.wrong} × ${SCORE.perWrong})</span><span class="value">+${b.wrong * SCORE.perWrong}</span></div>
+        <div class="score-row"><span class="label">PV restants (${b.hpLeft} × ${SCORE.perHp})</span><span class="value">+${b.hpLeft * SCORE.perHp}</span></div>
+        <div class="score-row"><span class="label">Or amassé</span><span class="value">+${b.gold}</span></div>
+        <div class="score-row"><span class="label">Bonus vitesse (moy. ${avgSec})</span><span class="value">+${b.speedBonus}</span></div>
+        <div class="score-row mult"><span class="label">Sous-total × multiplicateur tables</span><span class="value">${b.base} × ${b.multiplier.toFixed(1)}</span></div>
+        ${hcRow}
+        <div class="score-row total"><span class="label">SCORE FINAL</span><span class="value">${b.total}</span></div>
+      </div>
+    `;
+  }
+
+  function renderVictory() {
+    const r = state.lastResult;
+    if (!r) return renderSetup();
+    const rankLine = r.rank ? `Tu entres au classement à la <strong>${r.rank}ᵉ place</strong>.` : '';
+    return `
+      <div class="victory-screen">
+        <h1 class="victory-title">🏆 VICTOIRE 🏆</h1>
+        <div class="end-name">Bravo ${state.playerName} !</div>
+        <p class="end-flavor">Tu as conquis le donjon en ${TARGET_COMBATS} combats. ${rankLine}</p>
+        ${scoreBreakdownHTML(r.breakdown)}
+        <div class="end-actions">
+          <button class="start-btn" data-action="restart">REJOUER</button>
+          <button class="secondary-btn" data-action="open-leaderboard">VOIR LE CLASSEMENT</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderGameOver() {
+    const r = state.lastResult;
+    const wonCombats = state.player.combatsWon;
+    const flavor = wonCombats === 0 ? "Le donjon t'a englouti dès la première salle..." :
+                   wonCombats < 3   ? 'Tu as combattu vaillamment, mais le donjon est cruel.' :
+                   wonCombats < 7   ? 'Une exploration courageuse !' :
+                                      'Si proche de la victoire... reviens te venger !';
+    const breakdownHTML = r ? scoreBreakdownHTML(r.breakdown) : '';
+    const rankLine = r && r.rank ? `<p class="end-flavor">Ton run entre au classement à la <strong>${r.rank}ᵉ place</strong>.</p>` : '';
+    return `
+      <div class="gameover-screen">
+        <h1 class="gameover-title">💀 GAME OVER 💀</h1>
+        ${state.playerName ? `<div class="end-name">${state.playerName}</div>` : ''}
+        <p class="end-flavor">${flavor}</p>
+        ${breakdownHTML}
+        ${rankLine}
+        <div class="end-actions">
+          <button class="start-btn" data-action="restart">REJOUER</button>
+          <button class="secondary-btn" data-action="open-leaderboard">VOIR LE CLASSEMENT</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderLeaderboard() {
+    const lb = loadLeaderboard().slice(0, LEADERBOARD_DISPLAY);
+    const youIdx = state.leaderboardHighlightIdx;
+    let body;
+    if (lb.length === 0) {
+      body = `<p class="leaderboard-empty">Aucun run pour l'instant. Sois le premier !</p>`;
+    } else {
+      const rows = lb.map((e, i) => {
+        const total = e.correct + e.wrong;
+        const accuracy = total > 0 ? Math.round((e.correct / total) * 100) + '%' : '—';
+        const isYou = i === youIdx;
+        const winIcon = e.victory ? '🏆' : '💀';
+        const hcIcon = e.hardcore ? ' 🔥' : '';
+        return `<tr class="${isYou ? 'you' : ''}">
+          <td class="rank">${i + 1}</td>
+          <td class="lname">${(e.name || '???').replace(/[<>&]/g, '')} ${winIcon}${hcIcon}</td>
+          <td class="lscore">${e.score}</td>
+          <td class="lcombats">${e.combatsWon}/${TARGET_COMBATS}</td>
+          <td class="laccu">${accuracy}</td>
+        </tr>`;
+      }).join('');
+      body = `
+        <table class="leaderboard-table">
+          <thead>
+            <tr><th>#</th><th>Nom</th><th style="text-align:right">Score</th><th style="text-align:center">Combats</th><th style="text-align:center">Précis.</th></tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+    return `
+      <div class="leaderboard-screen">
+        <h1>🏛️ CLASSEMENT</h1>
+        ${body}
+        <div class="leaderboard-actions">
+          <button class="start-btn" data-action="restart">REJOUER</button>
+          ${lb.length ? '<button class="leaderboard-clear" data-action="clear-leaderboard">Effacer le classement</button>' : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  function focusFirstNumpad() {
+    const btn = root.querySelector('.numpad button[data-digit]');
+    if (btn) btn.focus();
+  }
+  function focusInitial() {
+    if (state.screen === 'combat' || (state.screen === 'chest' && state.chest && state.chest.opened)) {
+      focusFirstNumpad();
+    } else if (state.screen === 'gameover' || state.screen === 'victory' || state.screen === 'leaderboard') {
+      const btn = root.querySelector('[data-action="restart"]');
+      if (btn) btn.focus();
+    } else if (state.screen === 'name') {
+      const inp = root.querySelector('.name-input');
+      if (inp) { inp.focus(); inp.select(); }
+    }
+  }
+
+  function render() {
+    if (state.screen === 'setup') root.innerHTML = renderSetup();
+    else if (state.screen === 'name') root.innerHTML = renderName();
+    else if (state.screen === 'combat') root.innerHTML = renderCombat();
+    else if (state.screen === 'chest') root.innerHTML = renderChest();
+    else if (state.screen === 'choice') root.innerHTML = renderChoice();
+    else if (state.screen === 'shrine') root.innerHTML = renderShrine();
+    else if (state.screen === 'victory') root.innerHTML = renderVictory();
+    else if (state.screen === 'gameover') root.innerHTML = renderGameOver();
+    else if (state.screen === 'leaderboard') root.innerHTML = renderLeaderboard();
+    pruneSpriteMaps();
+    // Centre chaque sprite frais avant le 1er rAF (sinon flash mal aligné).
+    document.querySelectorAll('.sprite').forEach(s => applySpriteFrame(s, 0));
+    ensureAnimationRunning();
+    focusInitial();
+  }
+
+  // ======== EVENT DELEGATION ========
+  // Un seul listener sur root, dispatch via data-action.
+  root.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn || btn.disabled) return;
+    switch (btn.dataset.action) {
+      case 'select-table': selectTable(parseInt(btn.dataset.table, 10)); break;
+      case 'toggle-hardcore':
+        state.hardcore = !state.hardcore;
+        savePrefs();
+        render();
+        break;
+      case 'start':        goToNameScreen(); break;
+      case 'submit-name':  submitName(); break;
+      case 'digit':        inputDigit(btn.dataset.digit); break;
+      case 'backspace':    backspaceInput(); break;
+      case 'ok':           validateAnswer(); break;
+      case 'open-chest':   openChest(); break;
+      case 'skip-chest':   skipChest(); break;
+      case 'choose-door':  chooseDoor(parseInt(btn.dataset.door, 10)); break;
+      case 'use-shrine':   useShrine(); break;
+      case 'skip-shrine':  skipShrine(); break;
+      case 'open-leaderboard':
+        if (state.lastResult) {
+          // Met en surbrillance le run qu'on vient de finir
+          const lb = loadLeaderboard().slice(0, LEADERBOARD_DISPLAY);
+          state.leaderboardHighlightIdx = lb.findIndex(e =>
+            e.score === state.lastResult.entry.score &&
+            e.date === state.lastResult.entry.date &&
+            e.name === state.lastResult.entry.name
+          );
+        }
+        state.screen = 'leaderboard';
+        render();
+        break;
+      case 'clear-leaderboard':
+        if (window.confirm('Vraiment effacer tous les scores ?')) {
+          clearLeaderboardStorage();
+          state.leaderboardHighlightIdx = -1;
+          render();
+        }
+        break;
+      case 'restart':
+        // Retour à l'accueil (choix des tables) — pas de relance auto.
+        // Le prénom reste mémorisé et sera pré-rempli quand on cliquera ENTRER.
+        clearAllTimers();
+        clearToast();
+        clearTransientState();
+        state.lastResult = null;
+        state.leaderboardHighlightIdx = -1;
+        state.locked = false;
+        state.screen = 'setup';
+        render();
+        break;
+    }
+  });
+
+  // Saisie du prénom : capter input et Enter
+  root.addEventListener('input', (e) => {
+    if (e.target.matches('[data-action="name-input"]')) {
+      state.nameInput = e.target.value.slice(0, NAME_MAX_LENGTH);
+      const btn = root.querySelector('[data-action="submit-name"]');
+      if (btn) btn.disabled = state.nameInput.trim().length === 0;
+    }
+  });
+  root.addEventListener('keydown', (e) => {
+    if (e.target.matches('[data-action="name-input"]') && e.key === 'Enter') {
+      e.preventDefault();
+      submitName();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (!isNumpadActive() || state.locked) return;
+    if (e.target && e.target.matches && e.target.matches('input, textarea')) return;
+    if (e.key >= '0' && e.key <= '9') { inputDigit(e.key); e.preventDefault(); }
+    else if (e.key === 'Backspace') { backspaceInput(); e.preventDefault(); }
+    else if (e.key === 'Enter') { validateAnswer(); e.preventDefault(); }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
