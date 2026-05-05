@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Grimoire Éducatif</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-1: #1e2a4a;
+    --bg-2: #2d1a4a;
+    --ink: #1a1a2e;
+    --ink-soft: #4a4a6a;
+    --paper: #f7f3e8;
+    --paper-warm: #fff8e8;
+    --accent: #d4a836;
+  }
+
+  html, body {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  body {
+    font-family: 'Trebuchet MS', 'Comic Sans MS', sans-serif;
+    background:
+      radial-gradient(ellipse at top, var(--bg-2) 0%, var(--bg-1) 50%, #0d0a1e 100%);
+    color: var(--paper);
+    padding: 32px 20px;
+    padding-bottom: max(32px, env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  header {
+    text-align: center;
+    max-width: 720px;
+    margin-bottom: 40px;
+  }
+
+  .title {
+    font-size: clamp(32px, 6vw, 52px);
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    background: linear-gradient(180deg, #fff8e8, #d4a836);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 2px 20px rgba(212, 168, 54, 0.3);
+  }
+
+  .tagline {
+    font-size: clamp(14px, 2.4vw, 17px);
+    color: #c8c0d8;
+    line-height: 1.5;
+  }
+
+  main {
+    width: 100%;
+    max-width: 1000px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  @media (min-width: 720px) {
+    .grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .card {
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 20px;
+    padding: 28px 24px;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    box-shadow:
+      0 12px 32px rgba(0,0,0,0.4),
+      inset 0 0 0 3px rgba(0,0,0,0.05);
+    border-top: 6px solid var(--card-accent, var(--accent));
+    transition: transform 0.15s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 60%;
+    background: linear-gradient(180deg, var(--card-tint, transparent), transparent);
+    pointer-events: none;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px rgba(0,0,0,0.5);
+  }
+  .card:active { transform: translateY(0); }
+
+  .card-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+    line-height: 1;
+    position: relative;
+    z-index: 1;
+  }
+
+  .card-title {
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: var(--ink);
+    position: relative;
+    z-index: 1;
+  }
+
+  .card-desc {
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    margin-bottom: 18px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .card-cta {
+    background: var(--card-accent, var(--accent));
+    color: white;
+    padding: 10px 24px;
+    border-radius: 999px;
+    font-weight: bold;
+    font-size: 15px;
+    box-shadow: 0 4px 0 var(--card-accent-dark, #a8861f);
+    position: relative;
+    z-index: 1;
+  }
+
+  .card.donjon {
+    --card-accent: #c1342a;
+    --card-accent-dark: #7a1f18;
+    --card-tint: rgba(193, 52, 42, 0.08);
+  }
+  .card.sorcier {
+    --card-accent: #7a2dc9;
+    --card-accent-dark: #4a1a7a;
+    --card-tint: rgba(122, 45, 201, 0.08);
+  }
+  .card.pirate {
+    --card-accent: #a8651a;
+    --card-accent-dark: #6a3f10;
+    --card-tint: rgba(168, 101, 26, 0.1);
+  }
+
+  footer {
+    margin-top: 48px;
+    text-align: center;
+    font-size: 12px;
+    color: #8a829c;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 class="title">Le Grimoire Éducatif</h1>
+  <p class="tagline">Une collection de petits jeux pour apprendre en s'amusant.</p>
+</header>
+
+<main>
+  <div class="grid">
+
+    <a class="card donjon" href="donjon-multiplication/index.html">
+      <div class="card-icon">⚔️</div>
+      <div class="card-title">Le Donjon des Multiplications</div>
+      <p class="card-desc">Traverse 10 salles de donjon en répondant aux multiplications. Combats, coffres, sanctuaires et mode hardcore.</p>
+      <span class="card-cta">Entrer dans le donjon →</span>
+    </a>
+
+    <a class="card sorcier" href="sorcier-imparfait/index.html">
+      <div class="card-icon">🧙‍♂️</div>
+      <div class="card-title">Le Sorcier de l'Imparfait</div>
+      <p class="card-desc">10 questions pour réviser l'imparfait. Mode QCM facile ou mode sorcier où tu écris la terminaison.</p>
+      <span class="card-cta">Lancer le sortilège →</span>
+    </a>
+
+    <a class="card pirate" href="pirate-accords/index.html">
+      <div class="card-icon">🏴‍☠️</div>
+      <div class="card-title">Les Lettres du Capitaine Crochet-Mou</div>
+      <p class="card-desc">Chasse les fautes d'accord en genre et en nombre dans les lettres d'un vieux capitaine pirate à la grammaire douteuse.</p>
+      <span class="card-cta">Hisser les voiles →</span>
+    </a>
+
+  </div>
+</main>
+
+<footer>
+  Tout est local : aucun compte, aucune donnée envoyée.
+</footer>
+
+</body>
+</html>
