@@ -19,6 +19,9 @@ Quizz pour réviser l'imparfait sur 6 verbes (être, avoir, aller, habiter, fêt
 ### 🏴‍☠️ [Les Lettres du Capitaine Crochet-Mou](pirate-accords/)
 Chasse aux fautes d'accord (CE2) sur les lettres d'un vieux capitaine pirate. Couvre l'accord nom/adjectif, les pluriels en -s/-aux/-eaux/-oux, les déterminants `ce/cette/ces` et l'accord sujet-verbe.
 
+### 🪂 [Battle Royale du Passé Composé](battle-royale-passe-compose/)
+Le passé composé de CM1 (leçons C4 et C5) dans une ambiance battle royale. Quatre zones progressives : choisir l'auxiliaire, former le participe passé, accorder avec *être*, puis tout à la fois. Trois boucliers, coffres de loot entre les zones, mode Tempête chronométré, récapitulatif des erreurs à la fin.
+
 ## Structure
 
 ```
@@ -29,7 +32,9 @@ Chasse aux fautes d'accord (CE2) sur les lettres d'un vieux capitaine pirate. Co
 │   └── assets/
 ├── sorcier-imparfait/
 │   └── index.html
-└── pirate-accords/
+├── pirate-accords/
+│   └── index.html
+└── battle-royale-passe-compose/
     └── index.html
 ```
 

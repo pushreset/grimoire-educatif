@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Battle Royale du Passé Composé</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --nuit: #070b1f;
+    --nuit-2: #101a3d;
+    --tempete: #7b3ff2;
+    --tempete-clair: #b07bff;
+    --neon: #35e0ff;
+    --or: #ffc93c;
+    --vert: #45e07a;
+    --rouge: #ff5c5c;
+    --texte: #e8ecff;
+    --texte-doux: #98a3cc;
+  }
+
+  html, body { min-height: 100vh; min-height: 100dvh; }
+
+  body {
+    font-family: 'Trebuchet MS', 'Comic Sans MS', sans-serif;
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(123,63,242,0.35) 0%, transparent 55%),
+      radial-gradient(ellipse at 85% 15%, rgba(53,224,255,0.22) 0%, transparent 50%),
+      linear-gradient(180deg, var(--nuit-2) 0%, var(--nuit) 60%, #03050f 100%);
+    background-attachment: fixed;
+    color: var(--texte);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 16px;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+  }
+
+  .jeu {
+    width: 100%;
+    max-width: 680px;
+    background: rgba(12, 18, 46, 0.88);
+    border: 2px solid rgba(53, 224, 255, 0.35);
+    border-radius: 22px;
+    padding: 26px 22px 30px;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+
+  h1 {
+    text-align: center;
+    font-size: clamp(22px, 5vw, 30px);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    background: linear-gradient(180deg, #ffffff, var(--neon));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .sous-titre {
+    text-align: center;
+    color: var(--texte-doux);
+    font-size: 14px;
+    margin: 8px 0 22px;
+    line-height: 1.5;
+  }
+
+  /* ---------- écran de départ ---------- */
+
+  .bus { font-size: 68px; text-align: center; animation: vol 4s ease-in-out infinite; }
+  @keyframes vol {
+    0%, 100% { transform: translateX(-10px) translateY(0); }
+    50%      { transform: translateX(10px) translateY(-8px); }
+  }
+
+  .bloc {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .bloc-titre {
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--neon);
+    margin-bottom: 12px;
+    text-align: center;
+  }
+
+  .zones { display: grid; gap: 10px; }
+
+  .zone-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    text-align: left;
+    background: rgba(255,255,255,0.06);
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 14px;
+    padding: 12px 14px;
+    color: var(--texte);
+    font-family: inherit;
+    font-size: 15px;
+    cursor: pointer;
+    transition: transform .1s, border-color .2s, background .2s;
+  }
+  .zone-btn:hover:not(:disabled) {
+    border-color: var(--neon);
+    background: rgba(53,224,255,0.12);
+    transform: translateY(-2px);
+  }
+  .zone-btn:disabled { opacity: .45; cursor: not-allowed; }
+  .zone-num {
+    flex: 0 0 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: linear-gradient(180deg, var(--tempete-clair), var(--tempete));
+    font-weight: bold;
+    font-size: 18px;
+  }
+  .zone-txt strong { display: block; font-size: 16px; letter-spacing: .5px; }
+  .zone-txt span { font-size: 12.5px; color: var(--texte-doux); }
+
+  .gros-btn {
+    display: block;
+    width: 100%;
+    margin-top: 14px;
+    padding: 16px;
+    border: none;
+    border-radius: 14px;
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #04122b;
+    background: linear-gradient(180deg, #7ff0ff, var(--neon));
+    box-shadow: 0 5px 0 #0b7f9c;
+    cursor: pointer;
+    transition: transform .1s, box-shadow .1s;
+  }
+  .gros-btn:hover { transform: translateY(-2px); box-shadow: 0 7px 0 #0b7f9c; }
+  .gros-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #0b7f9c; }
+
+  .gros-btn.violet {
+    color: #fff;
+    background: linear-gradient(180deg, var(--tempete-clair), var(--tempete));
+    box-shadow: 0 5px 0 #4a1f9e;
+  }
+  .gros-btn.violet:hover { box-shadow: 0 7px 0 #4a1f9e; }
+  .gros-btn.violet:active { box-shadow: 0 2px 0 #4a1f9e; }
+
+  .interrupteur {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 14px;
+    color: var(--texte-doux);
+  }
+  .interrupteur strong { color: var(--texte); display: block; font-size: 15px; }
+  .bascule {
+    flex: 0 0 58px;
+    height: 30px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.15);
+    border: 2px solid rgba(255,255,255,0.2);
+    position: relative;
+    cursor: pointer;
+    transition: background .2s, border-color .2s;
+  }
+  .bascule::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform .2s;
+  }
+  .bascule.on { background: var(--tempete); border-color: var(--tempete-clair); }
+  .bascule.on::after { transform: translateX(28px); }
+
+  /* ---------- HUD ---------- */
+
+  .hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .hud-zone {
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--or);
+  }
+  .hud-droite { display: flex; gap: 16px; font-size: 15px; font-weight: bold; }
+  .hud-droite span { color: var(--texte-doux); font-weight: normal; font-size: 12px; }
+
+  .cercle {
+    height: 12px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.1);
+    overflow: hidden;
+    margin-bottom: 6px;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .cercle-barre {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--tempete), var(--neon));
+    transition: width .4s;
+  }
+
+  .chrono {
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.08);
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+  .chrono-barre {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, var(--or), var(--rouge));
+  }
+
+  /* ---------- question ---------- */
+
+  .carte {
+    background: linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.04));
+    border: 2px solid rgba(53,224,255,0.3);
+    border-radius: 18px;
+    padding: 22px 18px;
+    margin-bottom: 16px;
+  }
+
+  .consigne {
+    display: inline-block;
+    background: rgba(255,201,60,0.16);
+    border: 1px solid rgba(255,201,60,0.5);
+    color: var(--or);
+    font-size: 12.5px;
+    font-weight: bold;
+    padding: 5px 12px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+  }
+
+  .phrase {
+    font-size: clamp(18px, 4.2vw, 22px);
+    line-height: 1.75;
+  }
+
+  .trou {
+    display: inline-block;
+    min-width: 74px;
+    text-align: center;
+    border-bottom: 3px dashed var(--neon);
+    color: var(--neon);
+    font-weight: bold;
+  }
+  /* le trou affiche TOUJOURS la bonne réponse en vert : l'erreur est signalée
+     par le bouton rouge et l'encadré d'explication, pas par le mot correct. */
+  .trou.rempli { border-bottom-style: solid; border-bottom-color: var(--vert); color: var(--vert); }
+
+  .fixe { color: var(--texte-doux); }
+
+  .options { display: grid; gap: 10px; }
+  @media (min-width: 520px) {
+    .options.deux    { grid-template-columns: 1fr 1fr; }
+    .options.trois   { grid-template-columns: 1fr 1fr 1fr; }
+    .options.quatre  { grid-template-columns: 1fr 1fr; }
+  }
+
+  .option {
+    background: rgba(255,255,255,0.07);
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 14px;
+    padding: 15px 10px;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--texte);
+    cursor: pointer;
+    transition: transform .1s, background .15s, border-color .15s;
+  }
+  .option:hover:not(:disabled) {
+    background: rgba(53,224,255,0.14);
+    border-color: var(--neon);
+    transform: translateY(-2px);
+  }
+  .option:active:not(:disabled) { transform: translateY(1px); }
+  .option:disabled { cursor: default; }
+  .option.bonne {
+    background: rgba(69,224,122,0.22);
+    border-color: var(--vert);
+    color: #b6ffcd;
+    animation: pop .35s;
+  }
+  .option.mauvaise {
+    background: rgba(255,92,92,0.2);
+    border-color: var(--rouge);
+    color: #ffc9c9;
+    animation: secousse .35s;
+  }
+
+  @keyframes pop {
+    0% { transform: scale(1); } 50% { transform: scale(1.07); } 100% { transform: scale(1); }
+  }
+  @keyframes secousse {
+    0%,100% { transform: translateX(0); } 25% { transform: translateX(-7px); } 75% { transform: translateX(7px); }
+  }
+
+  .retour-info {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    font-size: 14.5px;
+    line-height: 1.6;
+    display: none;
+  }
+  .retour-info.visible { display: block; }
+  .retour-info.ok  { background: rgba(69,224,122,0.14); border: 1px solid rgba(69,224,122,0.45); }
+  .retour-info.ko  { background: rgba(255,92,92,0.13); border: 1px solid rgba(255,92,92,0.45); }
+  .retour-info b { color: var(--or); }
+
+  /* ---------- loot ---------- */
+
+  .loot { display: grid; gap: 12px; }
+  @media (min-width: 520px) { .loot { grid-template-columns: 1fr 1fr; } }
+
+  .loot-carte {
+    background: linear-gradient(180deg, rgba(255,201,60,0.16), rgba(255,201,60,0.05));
+    border: 2px solid rgba(255,201,60,0.55);
+    border-radius: 16px;
+    padding: 20px 14px;
+    text-align: center;
+    font-family: inherit;
+    color: var(--texte);
+    cursor: pointer;
+    transition: transform .12s, box-shadow .2s;
+  }
+  .loot-carte:hover { transform: translateY(-4px); box-shadow: 0 10px 26px rgba(255,201,60,0.25); }
+  .loot-emoji { font-size: 42px; display: block; margin-bottom: 8px; }
+  .loot-nom { font-size: 16px; font-weight: bold; display: block; margin-bottom: 4px; }
+  .loot-desc { font-size: 12.5px; color: var(--texte-doux); }
+
+  /* ---------- fin ---------- */
+
+  .fin { text-align: center; }
+  .fin-emoji { font-size: 72px; margin-bottom: 8px; }
+  .fin-titre {
+    font-size: clamp(26px, 6vw, 38px);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .fin-titre.victoire {
+    background: linear-gradient(180deg, #fff2c2, var(--or));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .fin-titre.elimine { color: var(--rouge); }
+  .fin-score { font-size: 44px; font-weight: bold; color: var(--neon); margin: 12px 0 4px; }
+  .fin-detail { color: var(--texte-doux); font-size: 14px; line-height: 1.7; margin-bottom: 8px; }
+
+  .recap {
+    text-align: left;
+    margin: 18px 0 4px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .recap-titre { color: var(--or); font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+  .recap li { margin-bottom: 8px; list-style: none; padding-left: 20px; position: relative; }
+  .recap li::before { content: '✖'; position: absolute; left: 0; color: var(--rouge); font-size: 12px; }
+  .recap em { color: var(--texte-doux); font-style: normal; }
+  .recap b { color: var(--vert); }
+
+  .cache { display: none !important; }
+
+  .lien-maison {
+    position: fixed;
+    top: 14px; left: 14px;
+    background: rgba(12,18,46,0.9);
+    border: 1px solid rgba(53,224,255,0.4);
+    color: var(--neon);
+    text-decoration: none;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: bold;
+    z-index: 10;
+  }
+  .lien-maison:hover { background: rgba(53,224,255,0.18); }
+
+  .aide {
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--texte-doux);
+    line-height: 1.6;
+    text-align: center;
+  }
+  .aide b { color: var(--neon); }
+</style>
+</head>
+<body>
+
+<a href="../index.html" class="lien-maison">← Grimoire</a>
+
+<div class="jeu">
+
+  <!-- ====================== ÉCRAN DE DÉPART ====================== -->
+  <div id="ecran-depart">
+    <div class="bus">🚌</div>
+    <h1>Battle Royale du Passé&nbsp;Composé</h1>
+    <p class="sous-titre">
+      4 zones à traverser, 3 boucliers, une tempête qui se resserre.<br>
+      Le dernier joueur debout, c'est celui qui conjugue juste.
+    </p>
+
+    <div class="bloc">
+      <div class="bloc-titre">Choisis ta zone de largage</div>
+      <div class="zones" id="liste-zones"></div>
+    </div>
+
+    <div class="bloc">
+      <div class="interrupteur">
+        <div>
+          <strong>⛈️ Mode Tempête</strong>
+          20 secondes par question. Si le temps tombe, tu perds un bouclier.
+        </div>
+        <div class="bascule" id="bascule-tempete" role="button" tabindex="0" aria-label="Mode Tempête"></div>
+      </div>
+    </div>
+
+    <button class="gros-btn" id="btn-partie-complete">🪂 Partie complète (4 zones)</button>
+    <p class="aide">Record : <b id="record-affiche">—</b></p>
+  </div>
+
+  <!-- ====================== ÉCRAN DE JEU ====================== -->
+  <div id="ecran-jeu" class="cache">
+    <div class="hud">
+      <div class="hud-zone" id="hud-zone">ZONE 1 · LARGAGE</div>
+      <div class="hud-droite">
+        <div><span>Boucliers</span><br><span id="hud-boucliers" style="font-size:18px;color:var(--texte)">🛡🛡🛡</span></div>
+        <div><span>Points</span><br><span id="hud-points" style="font-size:18px;color:var(--or)">0</span></div>
+        <div><span>Série</span><br><span id="hud-serie" style="font-size:18px;color:var(--neon)">0</span></div>
+      </div>
+    </div>
+
+    <div class="cercle"><div class="cercle-barre" id="cercle-barre"></div></div>
+    <div class="chrono cache" id="chrono"><div class="chrono-barre" id="chrono-barre"></div></div>
+
+    <div class="carte">
+      <div class="consigne" id="consigne">Choisis le bon auxiliaire</div>
+      <div class="phrase" id="phrase"></div>
+    </div>
+
+    <div class="options" id="options"></div>
+
+    <div class="retour-info" id="retour-info"></div>
+
+    <button class="gros-btn cache" id="btn-suivant">Question suivante →</button>
+  </div>
+
+  <!-- ====================== ÉCRAN LOOT ====================== -->
+  <div id="ecran-loot" class="cache fin">
+    <div class="fin-emoji">🎁</div>
+    <h1 id="loot-titre">Zone sécurisée !</h1>
+    <p class="sous-titre" id="loot-sous">Ouvre un coffre avant d'entrer dans la zone suivante.</p>
+    <div class="loot" id="loot-cartes"></div>
+  </div>
+
+  <!-- ====================== ÉCRAN DE FIN ====================== -->
+  <div id="ecran-fin" class="cache fin">
+    <div class="fin-emoji" id="fin-emoji">🏆</div>
+    <div class="fin-titre" id="fin-titre">Victoire Royale</div>
+    <div class="fin-score" id="fin-score">0</div>
+    <div class="fin-detail" id="fin-detail"></div>
+    <div class="recap cache" id="recap">
+      <div class="recap-titre">À revoir</div>
+      <ul id="recap-liste"></ul>
+    </div>
+    <button class="gros-btn" id="btn-rejouer">Repartir au largage 🪂</button>
+    <button class="gros-btn violet" id="btn-accueil">Retour au camp de base</button>
+  </div>
+
+</div>
+
+<script>
+/* =========================================================================
+   BATTLE ROYALE DU PASSÉ COMPOSÉ
+   Programme CM1, leçons C4 (passé composé avec avoir) et C5 (avec être).
+
+   Le jeu est découpé en 4 zones qui suivent l'ordre de difficulté réel :
+     zone 1  choisir l'auxiliaire (avoir / être)
+     zone 2  former le participe passé (-é / -i / -u / -s / -t)
+     zone 3  accorder le participe passé avec être
+     zone 4  tout à la fois, forme verbale complète
+
+   Une seule banque de phrases (`phrases`) alimente les zones 1, 3 et 4.
+   La zone 2 utilise la liste `verbes`.
+   ========================================================================= */
+
+/* --- auxiliaires conjugués au présent, indexés par `pn` (0=je … 5=ils/elles) --- */
+const AUX = {
+  avoir: ['ai', 'as', 'a', 'avons', 'avez', 'ont'],
+  'être': ['suis', 'es', 'est', 'sommes', 'êtes', 'sont']
+};
+
+/* --- les 18 verbes que le manuel donne comme se conjuguant avec être (p. 112) --- */
+const VERBES_ETRE = [
+  'monter', 'rester', 'entrer', 'rentrer', 'tomber', 'retourner', 'arriver', 'passer',
+  'aller', 'venir', 'devenir', 'revenir', 'partir', 'sortir', 'apparaitre', 'mourir',
+  'naitre', 'descendre'
+];
+
+/* -------------------------------------------------------------------------
+   BANQUE DE PHRASES
+   b   : début de phrase (se termine par une espace, ou par une apostrophe)
+   a   : fin de phrase
+   inf : infinitif
+   aux : 'avoir' ou 'être'
+   pp  : participe passé au masculin singulier
+   agr : suffixe d'accord ('' / 'e' / 's' / 'es') — utilisé seulement avec être
+   pn  : personne 0..5 (je, tu, il/elle, nous, vous, ils/elles)
+   ------------------------------------------------------------------------- */
+const phrases = [
+  /* ---- auxiliaire être ---- */
+  { b: "Nova ",                a: " du bus la dernière.",                     inf: 'sortir',     aux: 'être', pp: 'sorti',     agr: 'e',  pn: 2, indice: "la dernière" },
+  { b: "Les deux joueuses ",   a: " dans la zone de la tempête.",             inf: 'entrer',     aux: 'être', pp: 'entré',     agr: 'es', pn: 5, indice: "Les deux joueuses" },
+  { b: "Mon équipier ",        a: " sur le toit de la tour.",                 inf: 'monter',     aux: 'être', pp: 'monté',     agr: '',   pn: 2, indice: "Mon équipier" },
+  { b: "Moi, Léo, je ",        a: " au sol beaucoup trop vite.",              inf: 'tomber',     aux: 'être', pp: 'tombé',     agr: '',   pn: 0, indice: "Moi, Léo" },
+  { b: "Mon frère et moi, nous ", a: " tous les deux dans le cercle final.",  inf: 'rester',     aux: 'être', pp: 'resté',     agr: 's',  pn: 3, indice: "Mon frère et moi" },
+  { b: "Toi, Julie, tu ",      a: " chercher des soins dans le bunker.",      inf: 'partir',     aux: 'être', pp: 'parti',     agr: 'e',  pn: 1, indice: "Toi, Julie" },
+  { b: "Les guerriers adverses ", a: " derrière la colline.",                 inf: 'apparaitre', aux: 'être', pp: 'apparu',    agr: 's',  pn: 5, indice: "Les guerriers adverses" },
+  { b: "Ma coéquipière ",      a: " me relever juste à temps.",               inf: 'revenir',    aux: 'être', pp: 'revenu',    agr: 'e',  pn: 2, indice: "Ma coéquipière" },
+  { b: "Elles ",               a: " dans le souterrain sans un bruit.",       inf: 'descendre',  aux: 'être', pp: 'descendu',  agr: 'es', pn: 5, indice: "Elles" },
+  { b: "Toi et ton frère, vous ", a: " les premiers sur la zone chaude.",     inf: 'arriver',    aux: 'être', pp: 'arrivé',    agr: 's',  pn: 4, indice: "Toi et ton frère" },
+  { b: "Le dernier adversaire ", a: " coincé dans la tempête.",               inf: 'rester',     aux: 'être', pp: 'resté',     agr: '',   pn: 2, indice: "Le dernier adversaire" },
+  { b: "Léa et Zoé ",          a: " championnes de la saison.",               inf: 'devenir',    aux: 'être', pp: 'devenu',    agr: 'es', pn: 5, indice: "Léa et Zoé" },
+  { b: "Il ",                  a: " au camp de base sans bouclier.",          inf: 'rentrer',    aux: 'être', pp: 'rentré',    agr: '',   pn: 2, indice: "Il" },
+  { b: "Mes copains et moi, nous ", a: " chercher le coffre légendaire.",     inf: 'aller',      aux: 'être', pp: 'allé',      agr: 's',  pn: 3, indice: "Mes copains et moi" },
+  { b: "Elle ",                a: " par le passage secret.",                  inf: 'passer',     aux: 'être', pp: 'passé',     agr: 'e',  pn: 2, indice: "Elle" },
+  { b: "Mes deux amies ",      a: " au point de rendez-vous.",                inf: 'retourner',  aux: 'être', pp: 'retourné',  agr: 'es', pn: 5, indice: "Mes deux amies" },
+  { b: "Moi, Lina, je ",       a: " en haut de la falaise avant l'orage.",    inf: 'monter',     aux: 'être', pp: 'monté',     agr: 'e',  pn: 0, indice: "Moi, Lina" },
+  { b: "Lila et Jules, vous ", a: " du souterrain les mains vides.",          inf: 'sortir',     aux: 'être', pp: 'sorti',     agr: 's',  pn: 4, indice: "Lila et Jules",
+    note: "Dans un groupe, s'il y a au moins un garçon, on accorde au masculin." },
+  { b: "Les élèves de la classe de CM1 ", a: " championnes du tournoi.",      inf: 'devenir',    aux: 'être', pp: 'devenu',    agr: 'es', pn: 5, indice: "championnes",
+    note: "Ici c'est l'attribut « championnes » qui indique que le sujet est féminin." },
+  { b: "Toi, Samia, tu ",      a: " la première dans la zone sûre.",          inf: 'entrer',     aux: 'être', pp: 'entré',     agr: 'e',  pn: 1, indice: "Toi, Samia" },
+  { b: "Nous, les trois filles de l'équipe, nous ", a: " par le tunnel du nord.", inf: 'passer', aux: 'être', pp: 'passé',   agr: 'es', pn: 3, indice: "les trois filles" },
+
+  /* ---- verbes pronominaux : auxiliaire être aussi (p. 112) ---- */
+  { b: "Elle s'",              a: " derrière un rocher.",                     inf: 'se cacher',  aux: 'être', pp: 'caché',     agr: 'e',  pn: 2, indice: "Elle" },
+  { b: "Ils se ",              a: " au point de largage.",                    inf: 'se retrouver', aux: 'être', pp: 'retrouvé', agr: 's', pn: 5, indice: "Ils" },
+  { b: "Mon coéquipier et moi, nous nous ", a: " après la chute.",            inf: 'se relever', aux: 'être', pp: 'relevé',    agr: 's',  pn: 3, indice: "Mon coéquipier et moi" },
+
+  /* ---- auxiliaire avoir ---- */
+  { b: "Nova ",                a: " du bus de combat en première.",           inf: 'sauter',     aux: 'avoir', pp: 'sauté',     agr: '', pn: 2 },
+  { b: "J'",                   a: " trois coffres dans la ville.",            inf: 'ouvrir',     aux: 'avoir', pp: 'ouvert',    agr: '', pn: 0 },
+  { b: "Tu ",                  a: " une rampe pour monter sur le toit.",      inf: 'construire', aux: 'avoir', pp: 'construit', agr: '', pn: 1 },
+  { b: "Nous ",                a: " la victoire au dernier moment.",          inf: 'gagner',     aux: 'avoir', pp: 'gagné',     agr: '', pn: 3 },
+  { b: "Les joueuses ",        a: " la tour d'en face.",                      inf: 'viser',      aux: 'avoir', pp: 'visé',      agr: '', pn: 5 },
+  { b: "Vous ",                a: " à franchir le mur de la tempête.",        inf: 'réussir',    aux: 'avoir', pp: 'réussi',    agr: '', pn: 4 },
+  { b: "Il ",                  a: " son planeur au bon moment.",              inf: 'prendre',    aux: 'avoir', pp: 'pris',      agr: '', pn: 2 },
+  { b: "J'",                   a: " mon meilleur score de la saison.",        inf: 'faire',      aux: 'avoir', pp: 'fait',      agr: '', pn: 0 },
+  { b: "Nous ",                a: " un adversaire caché dans les buissons.",  inf: 'voir',       aux: 'avoir', pp: 'vu',        agr: '', pn: 3 },
+  { b: "Tu ",                  a: " que la zone allait bouger.",              inf: 'dire',       aux: 'avoir', pp: 'dit',       agr: '', pn: 1 },
+  { b: "Elles ",               a: " toutes les ressources du village.",       inf: 'ramasser',   aux: 'avoir', pp: 'ramassé',   agr: '', pn: 5 },
+  { b: "Mon équipe ",          a: " tenir jusqu'au cercle final.",            inf: 'pouvoir',    aux: 'avoir', pp: 'pu',        agr: '', pn: 2 },
+  { b: "Vous ",                a: " beaucoup de chance sur cette partie.",    inf: 'avoir',      aux: 'avoir', pp: 'eu',        agr: '', pn: 4 },
+  { b: "Ils ",                 a: " leur base en dix secondes.",              inf: 'bâtir',      aux: 'avoir', pp: 'bâti',      agr: '', pn: 5 },
+  { b: "J'",                   a: " tout droit vers le coffre doré.",         inf: 'foncer',     aux: 'avoir', pp: 'foncé',     agr: '', pn: 0 },
+  { b: "Tu ",                  a: " plus vite que la tempête.",               inf: 'courir',     aux: 'avoir', pp: 'couru',     agr: '', pn: 1 },
+  { b: "Nous ",                a: " nos boucliers avant le combat.",          inf: 'remplir',    aux: 'avoir', pp: 'rempli',    agr: '', pn: 3 },
+  { b: "Elle ",                a: " une arme légendaire dans le coffre.",     inf: 'trouver',    aux: 'avoir', pp: 'trouvé',    agr: '', pn: 2 },
+  { b: "Vous ",                a: " la meilleure stratégie de l'équipe.",     inf: 'choisir',    aux: 'avoir', pp: 'choisi',    agr: '', pn: 4 },
+  { b: "Ils ",                 a: " la montagne enneigée sans se faire voir.", inf: 'escalader', aux: 'avoir', pp: 'escaladé',  agr: '', pn: 5 }
+];
+
+/* -------------------------------------------------------------------------
+   BANQUE DE VERBES POUR LA ZONE 2 (participe passé)
+   g    : groupe (1, 2 ou 3)
+   faux : mauvaises propositions (obligatoire pour le 3e groupe,
+          générées automatiquement pour les 1er et 2e groupes)
+   ------------------------------------------------------------------------- */
+const verbes = [
+  { inf: 'sauter',     g: 1, pp: 'sauté',      b: "Nova a ",        a: " du bus de combat." },
+  { inf: 'ramasser',   g: 1, pp: 'ramassé',    b: "J'ai ",          a: " trois potions dans le coffre." },
+  { inf: 'gagner',     g: 1, pp: 'gagné',      b: "Nous avons ",    a: " la partie au dernier cercle." },
+  { inf: 'foncer',     g: 1, pp: 'foncé',      b: "Tu as ",         a: " vers le centre de la carte." },
+  { inf: 'viser',      g: 1, pp: 'visé',       b: "Elle a ",        a: " la tour d'en face." },
+  { inf: 'escalader',  g: 1, pp: 'escaladé',   b: "Ils ont ",       a: " la montagne enneigée." },
+  { inf: 'planer',     g: 1, pp: 'plané',      b: "Vous avez ",     a: " au-dessus de la forêt." },
+
+  { inf: 'atterrir',   g: 2, pp: 'atterri',    b: "Vous avez ",     a: " sur le toit du château." },
+  { inf: 'réussir',    g: 2, pp: 'réussi',     b: "J'ai ",          a: " à sortir de la tempête." },
+  { inf: 'bâtir',      g: 2, pp: 'bâti',       b: "Nous avons ",    a: " une tour en dix secondes." },
+  { inf: 'franchir',   g: 2, pp: 'franchi',    b: "Tu as ",         a: " le mur ennemi." },
+  { inf: 'choisir',    g: 2, pp: 'choisi',     b: "Elle a ",        a: " la meilleure arme." },
+  { inf: 'remplir',    g: 2, pp: 'rempli',     b: "Ils ont ",       a: " leurs boucliers avant le combat." },
+  { inf: 'ralentir',   g: 2, pp: 'ralenti',    b: "La tempête a ",  a: " sa progression." },
+
+  { inf: 'courir',     g: 3, pp: 'couru',      b: "Tu as ",         a: " jusqu'au cercle suivant.",       faux: ['courri', 'couri', 'courru'] },
+  { inf: 'voir',       g: 3, pp: 'vu',         b: "Nous avons ",    a: " un adversaire dans les buissons.", faux: ['voi', 'voyé', 'vut'] },
+  { inf: 'prendre',    g: 3, pp: 'pris',       b: "Il a ",          a: " son planeur au bon moment.",     faux: ['prendu', 'prendé', 'prit'] },
+  { inf: 'faire',      g: 3, pp: 'fait',       b: "J'ai ",          a: " mon meilleur score.",            faux: ['faisu', 'faité', 'fais'] },
+  { inf: 'dire',       g: 3, pp: 'dit',        b: "Tu as ",         a: " que la zone allait bouger.",     faux: ['disu', 'diré', 'dis'] },
+  { inf: 'pouvoir',    g: 3, pp: 'pu',         b: "Mon équipe a ",  a: " tenir jusqu'au bout.",           faux: ['pouvu', 'pouvé', 'peu'] },
+  { inf: 'vouloir',    g: 3, pp: 'voulu',      b: "Elles ont ",     a: " jouer en duo.",                  faux: ['voulé', 'vouli', 'veut'] },
+  { inf: 'avoir',      g: 3, pp: 'eu',         b: "Vous avez ",     a: " beaucoup de chance.",            faux: ['avu', 'avé', 'aï'] },
+  { inf: 'être',       g: 3, pp: 'été',        b: "Il a ",          a: " le dernier en vie.",             faux: ['étu', 'esté', 'étai'] },
+  { inf: 'construire', g: 3, pp: 'construit',  b: "Tu as ",         a: " une rampe géante.",              faux: ['construi', 'construisu', 'construé'] },
+  { inf: 'mettre',     g: 3, pp: 'mis',        b: "J'ai ",          a: " mon bouclier avant l'attaque.",  faux: ['mettu', 'mié', 'met'] },
+  { inf: 'ouvrir',     g: 3, pp: 'ouvert',     b: "Nous avons ",    a: " tous les coffres du village.",   faux: ['ouvri', 'ouvru', 'ouvré'] },
+  { inf: 'découvrir',  g: 3, pp: 'découvert',  b: "Elle a ",        a: " une cachette secrète.",          faux: ['découvri', 'découvru', 'découvré'] },
+  { inf: 'perdre',     g: 3, pp: 'perdu',      b: "Ils ont ",       a: " leur dernier bouclier.",         faux: ['perdi', 'perdre', 'perd'] },
+  { inf: 'apprendre',  g: 3, pp: 'appris',     b: "Vous avez ",     a: " à construire très vite.",        faux: ['apprendu', 'appri', 'apprit'] },
+  { inf: 'venir',      g: 3, pp: 'venu',       b: "Il est ",        a: " m'aider en pleine tempête.",     faux: ['veni', 'venir', 'vient'] },
+  { inf: 'partir',     g: 3, pp: 'parti',      b: "Elle est ",      a: " vers la zone sûre.",             faux: ['partu', 'partir', 'part'] },
+  { inf: 'descendre',  g: 3, pp: 'descendu',   b: "Je suis ",       a: " dans le souterrain.",            faux: ['descendi', 'descendre', 'descend'] }
+];
+
+/* --- fausses formes automatiques pour les 1er et 2e groupes --------------- */
+verbes.forEach(v => {
+  if (v.faux) return;
+  if (v.g === 1) {
+    const rad = v.pp.slice(0, -1);                 // 'sauté' -> 'saut'
+    v.faux = [v.inf, rad + 'i', rad + 'u'];        // l'erreur classique : garder le -er
+  } else {
+    const rad = v.inf.slice(0, -2);                // 'atterrir' -> 'atterr'
+    v.faux = [v.inf, rad + 'é', rad + 'u'];
+  }
+});
+
+/* ------------------------------- ZONES ---------------------------------- */
+const ZONES = [
+  { num: 1, nom: 'LARGAGE',      objectif: "Choisis le bon auxiliaire",
+    desc: "avoir ou être ?",                        emoji: '🪂' },
+  { num: 2, nom: 'PILLAGE',      objectif: "Trouve le bon participe passé",
+    desc: "-é, -i, -u, -s, -t",                     emoji: '🎁' },
+  { num: 3, nom: 'TEMPÊTE',      objectif: "Accorde le participe passé avec être",
+    desc: "é / ée / és / ées",                      emoji: '⛈️' },
+  { num: 4, nom: 'TOP 1',        objectif: "Écris toute la forme verbale",
+    desc: "auxiliaire + participe + accord",        emoji: '👑' }
+];
+
+const QUESTIONS_PAR_ZONE = 6;
+const BOUCLIERS_DEPART = 3;
+const BOUCLIERS_MAX = 5;
+const TEMPS_TEMPETE = 20;
+const CLE_STOCKAGE = 'grimoire-battle-royale-pc';
+
+/* --------------------------- ÉTAT DE LA PARTIE --------------------------- */
+let etat = null;
+let modeTempete = false;
+let chronoId = null;
+let progression = { zoneMax: 1, record: 0 };
+
+/* ------------------------------- OUTILS ---------------------------------- */
+const $ = id => document.getElementById(id);
+
+function melange(tab) {
+  const t = tab.slice();
+  for (let i = t.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [t[i], t[j]] = [t[j], t[i]];
+  }
+  return t;
+}
+
+/* colle le début de phrase et l'auxiliaire : pas d'espace après une apostrophe */
+function colle(debut, suite) {
+  return debut + suite;
+}
+
+function participeAccorde(p) {
+  return p.aux === 'être' ? p.pp + p.agr : p.pp;
+}
+
+function libelleAccord(agr) {
+  return { '': 'masculin singulier', 'e': 'féminin singulier',
+           's': 'masculin pluriel', 'es': 'féminin pluriel' }[agr];
+}
+
+function chargerProgression() {
+  try {
+    const brut = localStorage.getItem(CLE_STOCKAGE);
+    if (brut) progression = Object.assign(progression, JSON.parse(brut));
+  } catch (e) { /* stockage indisponible : on joue quand même */ }
+}
+
+function sauverProgression() {
+  try { localStorage.setItem(CLE_STOCKAGE, JSON.stringify(progression)); } catch (e) {}
+}
+
+/* ==========================================================================
+   FABRIQUE DE QUESTIONS
+   Chaque question renvoie : { consigne, avant, apres, options, bonne, aide }
+   ========================================================================== */
+
+function questionZone1(p) {
+  const bonne = AUX[p.aux][p.pn];
+  const autre = AUX[p.aux === 'avoir' ? 'être' : 'avoir'][p.pn];
+  const regle = p.inf.startsWith('se ')
+    ? "C'est un <b>verbe pronominal</b> (" + p.inf + ") : il se conjugue toujours avec <b>être</b>."
+    : p.aux === 'être'
+      ? "<b>" + p.inf + "</b> fait partie des 18 verbes qui se conjuguent avec <b>être</b>."
+      : "<b>" + p.inf + "</b> n'est pas dans la liste des verbes en être : on utilise <b>avoir</b>.";
+  return {
+    consigne: "Quel auxiliaire ? (verbe : " + p.inf + ")",
+    avant: p.b,
+    apres: ' ' + participeAccorde(p) + p.a,
+    options: melange([bonne, autre]),
+    bonne: bonne,
+    aide: regle
+  };
+}
+
+function questionZone2(v) {
+  const options = melange([v.pp].concat(melange(v.faux).slice(0, 2)));
+  const regleGroupe = v.g === 1
+    ? "Verbe du <b>1er groupe</b> : participe passé en <b>-é</b>."
+    : v.g === 2
+      ? "Verbe du <b>2e groupe</b> : participe passé en <b>-i</b>."
+      : "Verbe du <b>3e groupe</b> : participe passé à apprendre par cœur.";
+  return {
+    consigne: "Le participe passé de « " + v.inf + " »",
+    avant: v.b,
+    apres: v.a,
+    options: options,
+    bonne: v.pp,
+    aide: regleGroupe + " On écrit <b>" + v.pp + "</b>."
+  };
+}
+
+function questionZone3(p) {
+  const options = melange([p.pp, p.pp + 'e', p.pp + 's', p.pp + 'es']);
+  return {
+    consigne: "Accorde le participe passé (verbe : " + p.inf + ")",
+    avant: colle(p.b, AUX['être'][p.pn] + ' '),
+    apres: p.a,
+    options: options,
+    bonne: p.pp + p.agr,
+    aide: "Avec <b>être</b>, le participe passé s'accorde avec le sujet. L'indice est « <b>"
+          + p.indice + "</b> » → " + libelleAccord(p.agr) + " : on écrit <b>" + p.pp + p.agr + "</b>."
+          + (p.note ? ' ' + p.note : '')
+  };
+}
+
+function questionZone4(p) {
+  const bonAux = AUX[p.aux][p.pn];
+  const mauvAux = AUX[p.aux === 'avoir' ? 'être' : 'avoir'][p.pn];
+  const bonPp = participeAccorde(p);
+  /* participe mal accordé : avec avoir on ajoute un accord (interdit),
+     avec être on retire ou on change l'accord */
+  const mauvPp = p.aux === 'avoir'
+    ? p.pp + (p.pn >= 3 ? 's' : 'e')
+    : (p.agr === '' ? p.pp + 'e' : p.pp);
+
+  const options = melange([
+    bonAux + ' ' + bonPp,
+    mauvAux + ' ' + bonPp,
+    bonAux + ' ' + mauvPp,
+    mauvAux + ' ' + mauvPp
+  ]);
+
+  const aide = p.aux === 'avoir'
+    ? "Auxiliaire <b>avoir</b> → le participe passé <b>ne s'accorde jamais</b> avec le sujet."
+    : "Auxiliaire <b>être</b> → le participe passé s'accorde. L'indice est « <b>" + p.indice
+      + "</b> » → " + libelleAccord(p.agr) + "." + (p.note ? ' ' + p.note : '');
+
+  return {
+    consigne: "Toute la forme verbale (verbe : " + p.inf + ")",
+    avant: p.b,
+    apres: p.a,
+    options: options,
+    bonne: bonAux + ' ' + bonPp,
+    aide: aide
+  };
+}
+
+function fabriquerQuestions(zone) {
+  if (zone === 2) {
+    return melange(verbes).slice(0, QUESTIONS_PAR_ZONE).map(questionZone2);
+  }
+  if (zone === 3) {
+    const etreSeul = phrases.filter(p => p.aux === 'être');
+    return melange(etreSeul).slice(0, QUESTIONS_PAR_ZONE).map(questionZone3);
+  }
+  const fabrique = zone === 1 ? questionZone1 : questionZone4;
+  /* on force un mélange équilibré avoir / être */
+  const avecEtre  = melange(phrases.filter(p => p.aux === 'être'));
+  const avecAvoir = melange(phrases.filter(p => p.aux === 'avoir'));
+  const moitie = QUESTIONS_PAR_ZONE / 2;
+  return melange(avecEtre.slice(0, moitie).concat(avecAvoir.slice(0, moitie))).map(fabrique);
+}
+
+/* ==========================================================================
+   DÉROULEMENT
+   ========================================================================== */
+
+function demarrer(zoneDepart, partieComplete) {
+  etat = {
+    zone: zoneDepart,
+    zoneFin: partieComplete ? 4 : zoneDepart,
+    questions: fabriquerQuestions(zoneDepart),
+    index: 0,
+    boucliers: BOUCLIERS_DEPART,
+    points: 0,
+    serie: 0,
+    meilleureSerie: 0,
+    multiplicateur: 1,
+    secondeChance: false,
+    erreurs: [],
+    verrou: false
+  };
+  montrer('ecran-jeu');
+  afficherQuestion();
+}
+
+function montrer(id) {
+  ['ecran-depart', 'ecran-jeu', 'ecran-loot', 'ecran-fin']
+    .forEach(e => $(e).classList.toggle('cache', e !== id));
+}
+
+function afficherHud() {
+  const z = ZONES[etat.zone - 1];
+  $('hud-zone').textContent = 'ZONE ' + z.num + ' · ' + z.nom;
+  $('hud-boucliers').textContent = '🛡'.repeat(etat.boucliers) || '💀';
+  $('hud-points').textContent = etat.points;
+  $('hud-serie').textContent = etat.serie;
+  $('cercle-barre').style.width = (etat.index / QUESTIONS_PAR_ZONE * 100) + '%';
+}
+
+function afficherQuestion() {
+  const q = etat.questions[etat.index];
+  etat.verrou = false;
+
+  afficherHud();
+  $('consigne').textContent = q.consigne;
+  $('phrase').innerHTML =
+    '<span class="fixe">' + q.avant + '</span>' +
+    '<span class="trou" id="trou">…</span>' +
+    '<span class="fixe">' + q.apres + '</span>';
+
+  const boite = $('options');
+  boite.className = 'options ' + ['', 'une', 'deux', 'trois', 'quatre'][q.options.length];
+  boite.innerHTML = '';
+  q.options.forEach(opt => {
+    const b = document.createElement('button');
+    b.className = 'option';
+    b.textContent = opt;
+    b.addEventListener('click', () => repondre(opt, b));
+    boite.appendChild(b);
+  });
+
+  $('retour-info').className = 'retour-info';
+  $('btn-suivant').classList.add('cache');
+
+  lancerChrono();
+}
+
+function lancerChrono() {
+  arreterChrono();
+  $('chrono').classList.toggle('cache', !modeTempete);
+  if (!modeTempete) return;
+
+  let reste = TEMPS_TEMPETE;
+  $('chrono-barre').style.width = '100%';
+  chronoId = setInterval(() => {
+    reste -= 0.1;
+    $('chrono-barre').style.width = Math.max(0, reste / TEMPS_TEMPETE * 100) + '%';
+    if (reste <= 0) {
+      arreterChrono();
+      if (!etat.verrou) repondre(null, null);
+    }
+  }, 100);
+}
+
+function arreterChrono() {
+  if (chronoId) { clearInterval(chronoId); chronoId = null; }
+}
+
+function repondre(choix, bouton) {
+  if (etat.verrou) return;
+  etat.verrou = true;
+  arreterChrono();
+
+  const q = etat.questions[etat.index];
+  const juste = choix === q.bonne;
+
+  document.querySelectorAll('.option').forEach(b => {
+    b.disabled = true;
+    if (b.textContent === q.bonne) b.classList.add('bonne');
+  });
+  if (!juste && bouton) bouton.classList.add('mauvaise');
+
+  const trou = $('trou');
+  trou.textContent = q.bonne;
+  trou.classList.add('rempli');
+
+  const info = $('retour-info');
+  if (juste) {
+    etat.serie++;
+    etat.meilleureSerie = Math.max(etat.meilleureSerie, etat.serie);
+    let gain = 10 * etat.multiplicateur;
+    let bonus = '';
+    if (etat.serie >= 3 && etat.serie % 3 === 0) {
+      gain += 15;
+      bonus = ' 🔥 Série de ' + etat.serie + ' : +15 points !';
+    }
+    etat.points += gain;
+    info.className = 'retour-info visible ok';
+    info.innerHTML = '✅ <b>+' + gain + ' points.</b> ' + q.aide + bonus;
+  } else {
+    etat.serie = 0;
+    etat.erreurs.push({ phrase: q.avant + q.bonne + q.apres, aide: q.aide });
+    if (etat.secondeChance) {
+      etat.secondeChance = false;
+      info.className = 'retour-info visible ko';
+      info.innerHTML = '🩹 <b>Seconde chance utilisée</b>, ton bouclier tient. ' + q.aide;
+    } else {
+      etat.boucliers--;
+      info.className = 'retour-info visible ko';
+      info.innerHTML = (choix === null ? '⛈️ <b>La tempête t\'a rattrapé !</b> ' : '❌ ')
+                       + q.aide + ' <b>−1 bouclier.</b>';
+    }
+  }
+
+  afficherHud();
+
+  if (etat.boucliers <= 0) {
+    setTimeout(() => finir(false), 900);
+    return;
+  }
+
+  const dernier = etat.index === QUESTIONS_PAR_ZONE - 1;
+  const btn = $('btn-suivant');
+  btn.textContent = dernier
+    ? (etat.zone === etat.zoneFin ? 'Voir le résultat 🏆' : 'Sécuriser la zone ✅')
+    : 'Question suivante →';
+  btn.classList.remove('cache');
+}
+
+function suivant() {
+  etat.index++;
+  if (etat.index < QUESTIONS_PAR_ZONE) { afficherQuestion(); return; }
+
+  /* zone terminée */
+  if (progression.zoneMax < Math.min(4, etat.zone + 1)) {
+    progression.zoneMax = Math.min(4, etat.zone + 1);
+    sauverProgression();
+  }
+  if (etat.zone === etat.zoneFin) { finir(true); return; }
+  afficherLoot();
+}
+
+/* ------------------------------ LOOT ------------------------------------- */
+const LOOTS = [
+  { emoji: '🛡️', nom: 'Bouclier +1',   desc: 'Un bouclier de plus (max ' + BOUCLIERS_MAX + ').',
+    appliquer: e => { e.boucliers = Math.min(BOUCLIERS_MAX, e.boucliers + 1); } },
+  { emoji: '💊', nom: 'Kit de soins',  desc: 'Tous tes boucliers reviennent à 3.',
+    appliquer: e => { e.boucliers = Math.max(e.boucliers, BOUCLIERS_DEPART); } },
+  { emoji: '💎', nom: 'Points doublés', desc: 'Chaque bonne réponse rapporte le double.',
+    appliquer: e => { e.multiplicateur = 2; } },
+  { emoji: '🩹', nom: 'Seconde chance', desc: 'La prochaine erreur ne coûte aucun bouclier.',
+    appliquer: e => { e.secondeChance = true; } }
+];
+
+function afficherLoot() {
+  arreterChrono();
+  montrer('ecran-loot');
+  const prochaine = ZONES[etat.zone];
+  $('loot-titre').textContent = 'Zone ' + etat.zone + ' sécurisée !';
+  $('loot-sous').innerHTML = 'Prochaine zone : <b style="color:var(--or)">'
+    + prochaine.emoji + ' ' + prochaine.nom + '</b> — ' + prochaine.objectif.toLowerCase()
+    + '.<br>Ouvre un coffre avant d\'y entrer.';
+
+  const boite = $('loot-cartes');
+  boite.innerHTML = '';
+  melange(LOOTS).slice(0, 2).forEach(loot => {
+    const b = document.createElement('button');
+    b.className = 'loot-carte';
+    b.innerHTML = '<span class="loot-emoji">' + loot.emoji + '</span>'
+                + '<span class="loot-nom">' + loot.nom + '</span>'
+                + '<span class="loot-desc">' + loot.desc + '</span>';
+    b.addEventListener('click', () => {
+      loot.appliquer(etat);
+      etat.zone++;
+      etat.index = 0;
+      etat.questions = fabriquerQuestions(etat.zone);
+      montrer('ecran-jeu');
+      afficherQuestion();
+    });
+    boite.appendChild(b);
+  });
+}
+
+/* ------------------------------- FIN ------------------------------------- */
+function finir(victoire) {
+  arreterChrono();
+  montrer('ecran-fin');
+
+  const complete = victoire && etat.zoneFin === 4;
+  $('fin-emoji').textContent = complete ? '👑' : victoire ? '✅' : '💀';
+  $('fin-titre').textContent = complete ? 'Victoire Royale' : victoire ? 'Zone terminée' : 'Éliminé';
+  $('fin-titre').className = 'fin-titre ' + (victoire ? 'victoire' : 'elimine');
+  $('fin-score').textContent = etat.points + ' pts';
+
+  let detail = 'Zone atteinte : <b>' + etat.zone + '/4</b> · Meilleure série : <b>'
+             + etat.meilleureSerie + '</b> · Boucliers restants : <b>' + Math.max(0, etat.boucliers) + '</b>';
+  if (complete) detail += '<br>Tu as traversé les quatre zones sans tomber. Respect.';
+  else if (!victoire) detail += '<br>La tempête t\'a eu. Regarde ce qui a coincé, puis relance.';
+  $('fin-detail').innerHTML = detail;
+
+  if (etat.points > progression.record) {
+    progression.record = etat.points;
+    sauverProgression();
+  }
+
+  const recap = $('recap');
+  const liste = $('recap-liste');
+  liste.innerHTML = '';
+  if (etat.erreurs.length) {
+    recap.classList.remove('cache');
+    etat.erreurs.slice(0, 6).forEach(err => {
+      const li = document.createElement('li');
+      li.innerHTML = '<em>' + err.phrase + '</em><br>' + err.aide;
+      liste.appendChild(li);
+    });
+  } else {
+    recap.classList.add('cache');
+  }
+}
+
+/* --------------------------- ÉCRAN DE DÉPART ----------------------------- */
+function construireEcranDepart() {
+  const boite = $('liste-zones');
+  boite.innerHTML = '';
+  ZONES.forEach(z => {
+    const verrouillee = z.num > progression.zoneMax;
+    const b = document.createElement('button');
+    b.className = 'zone-btn';
+    b.disabled = verrouillee;
+    b.innerHTML = '<span class="zone-num">' + (verrouillee ? '🔒' : z.emoji) + '</span>'
+                + '<span class="zone-txt"><strong>Zone ' + z.num + ' · ' + z.nom + '</strong>'
+                + '<span>' + z.objectif + ' — ' + z.desc + '</span></span>';
+    b.addEventListener('click', () => demarrer(z.num, false));
+    boite.appendChild(b);
+  });
+  $('record-affiche').textContent = progression.record ? progression.record + ' pts' : '—';
+}
+
+/* ------------------------------ BRANCHEMENTS ----------------------------- */
+$('btn-suivant').addEventListener('click', suivant);
+$('btn-rejouer').addEventListener('click', () => demarrer(1, true));
+$('btn-accueil').addEventListener('click', () => {
+  construireEcranDepart();
+  montrer('ecran-depart');
+});
+$('btn-partie-complete').addEventListener('click', () => demarrer(1, true));
+
+const bascule = $('bascule-tempete');
+function basculerTempete() {
+  modeTempete = !modeTempete;
+  bascule.classList.toggle('on', modeTempete);
+}
+bascule.addEventListener('click', basculerTempete);
+bascule.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); basculerTempete(); }
+});
+
+/* raccourcis clavier : 1-4 pour répondre, Entrée pour continuer */
+document.addEventListener('keydown', e => {
+  if (!$('ecran-jeu').classList.contains('cache')) {
+    const n = parseInt(e.key, 10);
+    if (n >= 1 && n <= 4 && !etat.verrou) {
+      const b = document.querySelectorAll('.option')[n - 1];
+      if (b) b.click();
+    }
+    if (e.key === 'Enter' && !$('btn-suivant').classList.contains('cache')) {
+      $('btn-suivant').click();
+    }
+  }
+});
+
+/* ==========================================================================
+   VÉRIFICATION DES DONNÉES AU CHARGEMENT
+   (même principe que pirate-accords : on logge, on ne casse pas le jeu)
+   ========================================================================== */
+(function verifier() {
+  const accords = ['', 'e', 's', 'es'];
+  phrases.forEach((p, i) => {
+    const ref = 'phrases[' + i + '] (' + p.inf + ')';
+    if (!AUX[p.aux]) console.warn(ref + ' : auxiliaire inconnu ' + p.aux);
+    if (p.pn < 0 || p.pn > 5) console.warn(ref + ' : pn hors de 0..5');
+    if (accords.indexOf(p.agr) === -1) console.warn(ref + ' : accord invalide « ' + p.agr + ' »');
+    if (p.aux === 'avoir' && p.agr !== '') console.warn(ref + ' : avec avoir, agr doit rester vide');
+    if (p.aux === 'être' && !p.inf.startsWith('se ') && VERBES_ETRE.indexOf(p.inf) === -1) {
+      console.warn(ref + ' : verbe en être absent de la liste du manuel');
+    }
+    if (p.aux === 'avoir' && VERBES_ETRE.indexOf(p.inf) !== -1) {
+      console.warn(ref + ' : ce verbe se conjugue avec être selon le manuel');
+    }
+    /* l'accord doit être cohérent avec la personne */
+    const pluriel = p.pn >= 3;
+    if (p.aux === 'être' && pluriel !== (p.agr === 's' || p.agr === 'es')) {
+      console.warn(ref + ' : accord et personne incohérents (pn=' + p.pn + ', agr=' + p.agr + ')');
+    }
+
+    /* --- le genre doit être trouvable dans la phrase ---------------------
+       je / tu / nous / vous / on ne disent rien du genre : sans indice
+       explicite dans le texte, la question n'a pas de réponse trouvable.
+       `indice` doit être un morceau de la phrase qui donne le genre.        */
+    if (p.aux === 'être') {
+      const texte = p.b + p.a;
+      const pronomsMuets = ['je', 'tu', 'nous', 'vous', 'on', "j'"];
+      if (!p.indice) {
+        console.warn(ref + ' : indice de genre manquant (obligatoire avec être)');
+      } else if (texte.indexOf(p.indice) === -1) {
+        console.warn(ref + ' : indice « ' + p.indice + ' » absent de la phrase');
+      } else if (pronomsMuets.indexOf(p.indice.trim().toLowerCase()) !== -1) {
+        console.warn(ref + ' : indice « ' + p.indice + ' » ne dit rien du genre');
+      }
+      /* sujet réduit à un pronom muet et rien d'autre avant le verbe */
+      const debut = p.b.trim().toLowerCase().replace(/\s+/g, ' ');
+      if (pronomsMuets.indexOf(debut) !== -1) {
+        console.warn(ref + ' : la phrase commence par « ' + p.b.trim()
+                     + ' » sans contexte : le genre est indevinable');
+      }
+    }
+  });
+  verbes.forEach((v, i) => {
+    const ref = 'verbes[' + i + '] (' + v.inf + ')';
+    if (v.faux.indexOf(v.pp) !== -1) console.warn(ref + ' : la bonne réponse est aussi dans faux');
+    if (new Set(v.faux).size !== v.faux.length) console.warn(ref + ' : doublons dans faux');
+    if (v.g === 1 && !v.pp.endsWith('é')) console.warn(ref + ' : 1er groupe sans -é');
+    if (v.g === 2 && !v.pp.endsWith('i')) console.warn(ref + ' : 2e groupe sans -i');
+  });
+  const etreDispo = phrases.filter(p => p.aux === 'être').length;
+  const avoirDispo = phrases.filter(p => p.aux === 'avoir').length;
+  if (etreDispo < QUESTIONS_PAR_ZONE || avoirDispo < QUESTIONS_PAR_ZONE) {
+    console.warn('Pas assez de phrases pour remplir une zone sans répétition.');
+  }
+})();
+
+/* ------------------------------- DÉMARRAGE -------------------------------- */
+chargerProgression();
+construireEcranDepart();
+</script>
+
+</body>
+</html>
