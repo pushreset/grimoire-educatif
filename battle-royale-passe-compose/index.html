@@ -439,7 +439,7 @@
           <strong>⛈️ Mode Tempête</strong>
           20 secondes par question. Si le temps tombe, tu perds un bouclier.
         </div>
-        <div class="bascule" id="bascule-tempete" role="button" tabindex="0" aria-label="Mode Tempête"></div>
+        <div class="bascule" id="bascule-tempete" role="switch" aria-checked="false" tabindex="0" aria-label="Mode Tempête"></div>
       </div>
     </div>
 
@@ -628,7 +628,7 @@ const verbes = [
   { inf: 'perdre',     g: 3, pp: 'perdu',      b: "Ils ont ",       a: " leur dernier bouclier.",         faux: ['perdi', 'perdre', 'perd'] },
   { inf: 'apprendre',  g: 3, pp: 'appris',     b: "Vous avez ",     a: " à construire très vite.",        faux: ['apprendu', 'appri', 'apprit'] },
   { inf: 'venir',      g: 3, pp: 'venu',       b: "Il est ",        a: " m'aider en pleine tempête.",     faux: ['veni', 'venir', 'vient'] },
-  { inf: 'partir',     g: 3, pp: 'parti',      b: "Elle est ",      a: " vers la zone sûre.",             faux: ['partu', 'partir', 'part'] },
+  { inf: 'partir',     g: 3, pp: 'parti',      b: "Il est ",        a: " vers la zone sûre.",             faux: ['partu', 'partir', 'part'] },
   { inf: 'descendre',  g: 3, pp: 'descendu',   b: "Je suis ",       a: " dans le souterrain.",            faux: ['descendi', 'descendre', 'descend'] }
 ];
 
@@ -678,11 +678,6 @@ function melange(tab) {
     [t[i], t[j]] = [t[j], t[i]];
   }
   return t;
-}
-
-/* colle le début de phrase et l'auxiliaire : pas d'espace après une apostrophe */
-function colle(debut, suite) {
-  return debut + suite;
 }
 
 function participeAccorde(p) {
@@ -749,7 +744,8 @@ function questionZone3(p) {
   const options = melange([p.pp, p.pp + 'e', p.pp + 's', p.pp + 'es']);
   return {
     consigne: "Accorde le participe passé (verbe : " + p.inf + ")",
-    avant: colle(p.b, AUX['être'][p.pn] + ' '),
+    /* pas d'espace ajoutée : `b` finit déjà par une espace ou une apostrophe */
+    avant: p.b + AUX['être'][p.pn] + ' ',
     apres: p.a,
     options: options,
     bonne: p.pp + p.agr,
@@ -1035,7 +1031,7 @@ function finir(victoire) {
   liste.innerHTML = '';
   if (etat.erreurs.length) {
     recap.classList.remove('cache');
-    etat.erreurs.slice(0, 6).forEach(err => {
+    etat.erreurs.slice(-6).forEach(err => {
       const li = document.createElement('li');
       li.innerHTML = '<em>' + err.phrase + '</em><br>' + err.aide;
       liste.appendChild(li);
@@ -1076,6 +1072,7 @@ const bascule = $('bascule-tempete');
 function basculerTempete() {
   modeTempete = !modeTempete;
   bascule.classList.toggle('on', modeTempete);
+  bascule.setAttribute('aria-checked', modeTempete);
 }
 bascule.addEventListener('click', basculerTempete);
 bascule.addEventListener('keydown', e => {
@@ -1114,6 +1111,12 @@ document.addEventListener('keydown', e => {
     if (p.aux === 'avoir' && VERBES_ETRE.indexOf(p.inf) !== -1) {
       console.warn(ref + ' : ce verbe se conjugue avec être selon le manuel');
     }
+    /* zone 4 fabrique la mauvaise forme avec avoir en ajoutant 'e' ou 's' :
+       un participe déjà terminé par -s donnerait un mot inexistant (« priss ») */
+    if (p.aux === 'avoir' && p.pn >= 3 && p.pp.endsWith('s')) {
+      console.warn(ref + ' : participe en -s au pluriel, la fausse forme de la zone 4 serait invalide');
+    }
+
     /* l'accord doit être cohérent avec la personne */
     const pluriel = p.pn >= 3;
     if (p.aux === 'être' && pluriel !== (p.agr === 's' || p.agr === 'es')) {
@@ -1146,6 +1149,11 @@ document.addEventListener('keydown', e => {
     const ref = 'verbes[' + i + '] (' + v.inf + ')';
     if (v.faux.indexOf(v.pp) !== -1) console.warn(ref + ' : la bonne réponse est aussi dans faux');
     if (new Set(v.faux).size !== v.faux.length) console.warn(ref + ' : doublons dans faux');
+    /* la zone 2 affiche `pp` tel quel : avec être, le sujet doit être
+       masculin singulier, sinon on montre une faute d'accord en vert */
+    if (/\b(suis|es|est|sommes|êtes|sont)\s$/.test(v.b) && /^(Elle|Elles|Ils|Nous|Vous)\b/.test(v.b)) {
+      console.warn(ref + ' : sujet non masculin singulier avec être, le participe affiché sera mal accordé');
+    }
     if (v.g === 1 && !v.pp.endsWith('é')) console.warn(ref + ' : 1er groupe sans -é');
     if (v.g === 2 && !v.pp.endsWith('i')) console.warn(ref + ' : 2e groupe sans -i');
   });

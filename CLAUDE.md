@@ -156,6 +156,9 @@ Single-file `battle-royale-passe-compose/index.html`, autonome, pas d'assets.
 **`verbes`** alimente la zone 2 (participe passé). `faux` est **obligatoire pour le 3e groupe** ;
 pour les 1er et 2e groupes il est généré automatiquement juste après la déclaration
 (la fausse forme la plus utile étant l'infinitif : `sauter` au lieu de `sauté`).
+La zone 2 affiche `pp` **tel quel, sans accord** : si `b` se termine par un auxiliaire *être*,
+le sujet doit donc être **masculin singulier** (« Il est … », « Je suis … »), sinon on afficherait
+une faute d'accord en vert. La vérification au chargement le signale.
 
 ### Les 4 zones
 
@@ -183,7 +186,9 @@ comme dans le donjon : si le stockage est bloqué, le jeu tourne quand même.
   interaction doit le respecter.
 - Une IIFE de vérification tourne au chargement : auxiliaire connu, `pn` dans 0..5, accord valide,
   cohérence accord/personne, verbe en *être* présent dans `VERBES_ETRE` (la liste du manuel),
-  **présence et validité de `indice`**, pas de doublon dans `faux`.
+  **présence et validité de `indice`**, pas de doublon dans `faux`, sujet masculin singulier
+  pour les phrases de `verbes` conjuguées avec *être*, et participe en `-s` au pluriel avec *avoir*
+  (la zone 4 fabrique sa fausse forme en suffixant `s` : `pris` deviendrait `priss`).
   Elle logge des warnings, elle ne casse rien.
 
 ### Si tu ajoutes du contenu
