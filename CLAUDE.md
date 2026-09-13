@@ -14,7 +14,11 @@
 │   └── index.html              ← entièrement autonome, pas d'assets
 ├── pirate-accords/             ← jeu 3
 │   └── index.html
-└── battle-royale-passe-compose/ ← jeu 4
+├── battle-royale-passe-compose/ ← jeu 4
+│   └── index.html
+├── chasseuses-alphabet/        ← jeu 5 (CP)
+│   └── index.html
+└── chasseuses-nombres/         ← jeu 6 (CP)
     └── index.html
 ```
 
@@ -38,7 +42,9 @@ Chaque jeu est **autonome** dans son sous-dossier (single-file `index.html` + so
 
 ## Page de garde (`index.html` racine)
 
-Thème **neutre** (bleu-violet sombre + cartes ivoire) pour ne pas imposer un style aux jeux. Chaque carte a sa couleur d'accent qui hint le thème de l'app derrière. Single-file, ~150 lignes.
+Thème **neutre** (bleu-violet sombre + cartes ivoire) pour ne pas imposer un style aux jeux. Chaque carte a sa couleur d'accent qui hint le thème de l'app derrière. Single-file, ~200 lignes.
+
+Les cartes sont regroupées par niveau scolaire : une section **CP** puis une section **CM**, chacune avec un titre `.niveau` et sa propre `.grid`. Un nouveau jeu va dans la section de son niveau.
 
 ---
 
@@ -195,3 +201,46 @@ comme dans le donjon : si le stockage est bloqué, le jeu tourne quand même.
 
 Ajoute des entrées dans `phrases` / `verbes`, rien d'autre. Ouvre la console une fois :
 zéro warning = les données sont cohérentes.
+
+---
+
+## Jeux CP — conventions communes (`chasseuses-alphabet/`, `chasseuses-nombres/`)
+
+Deux jeux pour une enfant de CP qui **ne lit pas encore couramment**. Même habillage (concert néon,
+trio de chasseuses en emoji, talismans ivoire à bordure or), même squelette de code. Règles :
+
+- **Interface sans lecture** : pictos (← 🔁 ▶ 🔊 ⚙️), voix `SpeechSynthesis` fr-FR déclenchée au tap
+  (jamais en boucle, silence si pas de voix française), sons de retour en Web Audio (aucun fichier).
+- **Jamais de chrono, jamais de vies, jamais d'écran d'échec.** 1 à 3 étoiles selon les erreurs
+  (`calculerEtoiles` : 0 → 3, 1-2 → 2, 3+ → 1). Une erreur ne retire rien.
+- **Aide automatique** : à la 2e erreur sur la même question, la bonne réponse pulse (`.aide`).
+- **Tap-tap uniquement**, jamais de drag and drop. Zones tactiles ≥ 64 px.
+- 4 écrans pilotés par `montrer(id)` et la classe `.cache` : accueil, choix, manche, bilan.
+  Le bilan a toujours trois boutons libellés : ← (liste), 🔁 (rejouer), ▶ (suivant, caché au dernier).
+  Depuis la manche, ← ramène à la liste à tout moment. Tout est rejouable, la meilleure étoile est gardée.
+- Déverrouillage séquentiel : N+1 s'ouvre dès que N a ≥ 1 étoile.
+- Progression en `localStorage` sous `try/catch`, clés `grimoire.chasseuses-alphabet.v1` et
+  `grimoire.chasseuses-nombres.v1`. Réinitialisation en deux taps sur 🗑️ (pas de `confirm()`).
+- Une IIFE de vérification au chargement logge des `console.warn` si les données sont incohérentes.
+  Zéro warning attendu.
+
+### Jeu 5 — `chasseuses-alphabet/` : script ↔ cursive
+
+- Police cursive **Borel** (Rosalie Wagner, SIL OFL 1.1, sans nom réservé), sous-ensemble a-z
+  sans fonctions OpenType, embarquée en base64 woff2 (~3,8 Ko) dans le `@font-face`. Si la police
+  ne charge pas, `#police-absente` s'affiche : pas de repli italique.
+- `SCENES` : 5 scènes de 6 lettres par **groupe de confusion** (rondes, boucles, ponts, jambages,
+  final = f, x + 4 tirées au hasard). Les 24 premières lettres apparaissent une seule fois.
+- Mode inverse (cursive sur scène, script sur talismans) débloqué à 3 étoiles, bouton 🔄 dans la liste.
+- `genererManche(sceneId, inverse)`, `valider(manche, talisman, emplacement)`.
+
+### Jeu 6 — `chasseuses-nombres/` : calcul CP
+
+- Contenu calqué sur le cahier « Chaque jour compte » période 1 : `NIVEAUX` (16 entrées) avec un
+  générateur `gen()` chacun. Une question = `{ html, reponse, clavier: 'nombres'|'signes', maxi, aide, voix, cle }`.
+  Le `html` doit contenir `id="trou"` ; `cle` sert à éviter les doublons dans une manche.
+- `QUESTIONS_PAR_NIVEAU = 8`. Réponse au tap sur un clavier 0..`maxi` (ou `< = >`), validation immédiate.
+- `aide` = représentation en objets (emoji) : `.fantome` pour les objets à trouver, `.raye` pour les
+  objets retirés. Affichée à la 1re erreur ou via 👀.
+- Pour ajouter un niveau : une entrée dans `NIVEAUX` (id consécutif, `groupe` pour la section de la liste).
+  La vérification au chargement génère 20 manches par niveau et signale une réponse hors clavier.

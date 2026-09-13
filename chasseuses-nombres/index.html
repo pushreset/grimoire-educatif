@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Les Chasseuses des Nombres</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --nuit-1: #2a0f4a;
+    --nuit-2: #120627;
+    --noir: #06020f;
+    --magenta: #ff3fb4;
+    --cyan: #3ee6ff;
+    --or: #ffcc4d;
+    --or-sombre: #b8860b;
+    --vert: #35d07f;
+    --ivoire: #fff8ea;
+    --encre: #1b1030;
+    --papier-motif: repeating-linear-gradient(45deg, rgba(184,134,11,.07) 0 6px, transparent 6px 14px);
+  }
+
+  html, body { min-height: 100vh; min-height: 100dvh; }
+
+  body {
+    font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+    background: radial-gradient(ellipse at 50% -10%, var(--nuit-1) 0%, var(--nuit-2) 45%, var(--noir) 100%);
+    color: var(--ivoire);
+    padding: 16px 16px max(16px, env(safe-area-inset-bottom));
+    overflow-x: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .cache { display: none !important; }
+
+  body::before, body::after {
+    content: '';
+    position: fixed;
+    top: -20vh;
+    width: 60vw;
+    height: 120vh;
+    pointer-events: none;
+    opacity: .28;
+    z-index: 0;
+  }
+  body::before {
+    left: -10vw;
+    background: conic-gradient(from 20deg at 0% 0%, transparent 0deg, var(--magenta) 6deg, transparent 22deg);
+  }
+  body::after {
+    right: -10vw;
+    background: conic-gradient(from 320deg at 100% 0%, transparent 0deg, var(--cyan) 10deg, transparent 22deg);
+  }
+
+  .ecran {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* ---------- Pictos / boutons ---------- */
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  .picto {
+    min-width: 64px;
+    min-height: 64px;
+    border-radius: 18px;
+    font-size: 30px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,.08);
+    border: 2px solid rgba(255,255,255,.18);
+    transition: transform .1s, background .15s;
+  }
+  .picto:active { transform: scale(.94); background: rgba(255,255,255,.18); }
+  .picto.or {
+    background: linear-gradient(180deg, var(--or), #e0a020);
+    border-color: #fff1b0;
+    color: var(--encre);
+    box-shadow: 0 6px 0 var(--or-sombre), 0 0 24px rgba(255,204,77,.35);
+  }
+  .picto.or:active { box-shadow: 0 2px 0 var(--or-sombre); transform: translateY(4px); }
+  .picto.grand { min-width: 96px; min-height: 96px; font-size: 48px; border-radius: 28px; }
+  .picto.coupe { opacity: .55; }
+  .picto.confirme { background: #c1342a; border-color: #ff9a90; }
+
+  .barre-haut { display: flex; align-items: center; gap: 12px; }
+  .barre-haut .espace { flex: 1; }
+
+  /* ---------- Accueil ---------- */
+  #ecran-accueil { min-height: calc(100dvh - 32px); justify-content: center; align-items: center; text-align: center; gap: 28px; }
+  .trio { font-size: clamp(56px, 14vw, 96px); letter-spacing: .1em; filter: drop-shadow(0 0 18px rgba(255,63,180,.6)); }
+  .titre {
+    font-size: clamp(30px, 7vw, 56px);
+    font-weight: 900;
+    letter-spacing: 1px;
+    line-height: 1.05;
+    background: linear-gradient(180deg, #fff 0%, var(--cyan) 55%, var(--magenta) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 14px rgba(62,230,255,.45));
+  }
+  .apercu {
+    display: flex; gap: 12px; align-items: center; justify-content: center;
+    font-size: 40px; font-weight: bold; color: var(--encre);
+  }
+  .apercu span {
+    min-width: 70px; height: 70px; padding: 0 12px;
+    border-radius: 18px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--ivoire);
+    border: 3px solid var(--or);
+    background-image: var(--papier-motif);
+  }
+  .apercu .signe { color: var(--or); background: none; border: 0; min-width: auto; padding: 0; }
+  .accueil-pied { font-size: 13px; color: #a89bc4; }
+  .accueil-pied a { color: var(--cyan); }
+
+  /* ---------- Choix de niveau ---------- */
+  .groupe-titre {
+    display: flex; align-items: center; gap: 12px;
+    color: var(--or); font-size: 15px; letter-spacing: 1px; text-transform: uppercase;
+    margin-top: 6px;
+  }
+  .groupe-titre::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(255,204,77,.5), transparent); }
+  .niveaux { display: grid; gap: 12px; grid-template-columns: 1fr; }
+  @media (min-width: 560px) { .niveaux { grid-template-columns: 1fr 1fr; } }
+  .carte-niveau {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 76px;
+    padding: 10px 14px;
+    border-radius: 20px;
+    background: rgba(255,255,255,.07);
+    border: 2px solid rgba(255,255,255,.16);
+    text-align: left;
+    width: 100%;
+    transition: transform .1s;
+  }
+  .carte-niveau:active { transform: scale(.98); }
+  .carte-niveau.ouverte { border-color: var(--cyan); box-shadow: 0 0 18px rgba(62,230,255,.25); }
+  .carte-niveau.verrou { opacity: .45; }
+  .carte-niveau .icone { font-size: 34px; width: 48px; text-align: center; }
+  .carte-niveau .infos { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+  .carte-niveau .nom { font-weight: bold; font-size: 16px; }
+  .carte-niveau .exemple { font-size: 20px; color: var(--or); font-weight: bold; letter-spacing: 1px; }
+  .carte-niveau .etoiles { font-size: 18px; letter-spacing: 2px; }
+  .carte-niveau .etoiles .vide { opacity: .25; }
+
+  /* ---------- Manche ---------- */
+  .chant {
+    flex: 1; height: 22px; border-radius: 999px;
+    background: rgba(255,255,255,.1); border: 2px solid rgba(255,255,255,.2);
+    overflow: hidden; position: relative;
+  }
+  .chant > div {
+    height: 100%; width: 0; border-radius: 999px;
+    background: linear-gradient(90deg, var(--cyan), var(--magenta), var(--or));
+    box-shadow: 0 0 16px var(--magenta);
+    transition: width .45s cubic-bezier(.2,.9,.3,1.3);
+  }
+  .rideau {
+    display: flex; justify-content: center; gap: 18px;
+    font-size: 22px; color: var(--magenta); letter-spacing: .3em; text-shadow: 0 0 12px var(--magenta);
+  }
+
+  .carte-question {
+    border-radius: 24px;
+    padding: 22px 16px;
+    background: var(--ivoire);
+    background-image: var(--papier-motif);
+    border: 3px solid var(--cyan);
+    box-shadow: 0 0 30px rgba(62,230,255,.15);
+    color: var(--encre);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    min-height: 150px;
+  }
+  .carte-question.tremble { animation: tremble .45s; border-color: #ff6a5e; }
+  .carte-question.reussi { border-color: var(--vert); box-shadow: 0 0 30px rgba(53,208,127,.45); }
+
+  .question {
+    display: flex; align-items: center; justify-content: center; flex-wrap: wrap;
+    gap: 10px;
+    font-size: clamp(44px, 10vw, 72px);
+    font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1;
+  }
+  .question .op { color: #6a5a8a; font-size: .8em; }
+  .question .trou {
+    min-width: 1.3em; height: 1.3em; padding: 0 .15em;
+    border-radius: .3em;
+    border: 3px dashed var(--or);
+    background: rgba(255,204,77,.15);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--or-sombre);
+    animation: pulse-trou 1.4s ease-in-out infinite;
+  }
+  .question .trou.ok {
+    border-style: solid; border-color: var(--vert); background: rgba(53,208,127,.18); color: #158a4a;
+    animation: pose .4s cubic-bezier(.2,.9,.3,1.4);
+  }
+  @keyframes pulse-trou {
+    0%, 100% { box-shadow: 0 0 0 rgba(255,204,77,0); }
+    50% { box-shadow: 0 0 18px rgba(255,204,77,.7); }
+  }
+
+  /* boîte de comptage */
+  .boite {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    width: min(100%, 360px);
+    padding: 12px;
+    border-radius: 18px;
+    border: 2px solid rgba(27,16,48,.15);
+    background: rgba(255,255,255,.6);
+  }
+  .boite span { height: 60px; display: flex; align-items: center; justify-content: center; font-size: 38px; }
+
+  /* file numérique */
+  .file { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .file .case {
+    width: 58px; height: 62px;
+    border: 3px solid var(--encre);
+    border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 34px; font-weight: bold; font-family: Arial, Helvetica, sans-serif;
+    background: #fff;
+  }
+  .file .case.trou { border-color: var(--or); border-style: dashed; background: rgba(255,204,77,.15); color: var(--or-sombre); animation: pulse-trou 1.4s ease-in-out infinite; }
+  .file .case.trou.ok { border-style: solid; border-color: var(--vert); background: rgba(53,208,127,.18); color: #158a4a; animation: pose .4s; }
+
+  /* aide visuelle (objets) */
+  .aide {
+    display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 14px;
+    font-size: 30px;
+    padding: 10px 14px;
+    border-radius: 16px;
+    background: rgba(255,255,255,.65);
+    border: 2px dashed rgba(27,16,48,.2);
+    animation: pose .35s;
+  }
+  .aide .groupe { display: flex; flex-wrap: wrap; gap: 4px; max-width: 300px; }
+  .aide .barre { color: #6a5a8a; font-size: 26px; font-weight: bold; }
+  .aide .barre-v { width: 2px; height: 34px; background: rgba(27,16,48,.35); }
+  .aide .fantome { opacity: .28; filter: grayscale(1); }
+  .aide .raye { position: relative; opacity: .45; }
+  .aide .raye::after {
+    content: ''; position: absolute; left: -2px; right: -2px; top: 50%; height: 4px;
+    background: #d63a3a; transform: rotate(-30deg); border-radius: 2px;
+  }
+
+  .outils { display: flex; justify-content: center; gap: 14px; }
+
+  /* clavier */
+  .clavier {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+    padding-bottom: 12px;
+  }
+  .clavier.signes { grid-template-columns: repeat(3, 1fr); max-width: 420px; margin: 0 auto; width: 100%; }
+  @media (max-width: 480px) { .clavier { grid-template-columns: repeat(4, 1fr); gap: 10px; } }
+  .touche {
+    min-height: 72px;
+    border-radius: 18px;
+    background: var(--ivoire);
+    background-image: var(--papier-motif);
+    border: 3px solid var(--or);
+    color: var(--encre);
+    font-size: 40px;
+    font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+    box-shadow: 0 5px 0 var(--or-sombre), 0 8px 16px rgba(0,0,0,.4);
+    transition: transform .1s, box-shadow .1s, opacity .2s;
+  }
+  .touche:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--or-sombre); }
+  .touche.faux { opacity: .3; box-shadow: none; transform: translateY(4px); pointer-events: none; }
+  .touche.bon { background: linear-gradient(180deg, #e8ffe8, #b8f5c8); border-color: var(--vert); }
+  .touche.aide { animation: pulse-touche 1.1s ease-in-out infinite; }
+  .clavier.verrou .touche { pointer-events: none; }
+  @keyframes pulse-touche {
+    0%, 100% { transform: scale(1); box-shadow: 0 5px 0 var(--or-sombre), 0 0 0 rgba(255,204,77,0); }
+    50% { transform: scale(1.06); box-shadow: 0 5px 0 var(--or-sombre), 0 0 26px rgba(255,204,77,.9); }
+  }
+
+  @keyframes tremble {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-9px) rotate(-1deg); }
+    40% { transform: translateX(9px) rotate(1deg); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(6px); }
+  }
+  @keyframes pose {
+    0% { transform: scale(1.4); opacity: 0; }
+    100% { transform: none; opacity: 1; }
+  }
+
+  /* ---------- Bilan ---------- */
+  #ecran-bilan { min-height: calc(100dvh - 32px); justify-content: center; align-items: center; text-align: center; gap: 26px; }
+  .grandes-etoiles { font-size: clamp(56px, 16vw, 110px); display: flex; gap: 6px; }
+  .grandes-etoiles span { display: inline-block; opacity: .2; filter: grayscale(1); }
+  .grandes-etoiles span.on {
+    opacity: 1; filter: drop-shadow(0 0 18px var(--or));
+    animation: etoile .6s cubic-bezier(.2,.9,.3,1.6) both;
+  }
+  .grandes-etoiles span.on:nth-child(2) { animation-delay: .25s; }
+  .grandes-etoiles span.on:nth-child(3) { animation-delay: .5s; }
+  @keyframes etoile { 0% { transform: scale(0) rotate(-90deg); } 100% { transform: scale(1) rotate(0); } }
+  .bilan-titre { font-size: 22px; font-weight: bold; color: var(--cyan); }
+  .bilan-boutons { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+  .bilan-boutons .action { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .bilan-boutons .action span { font-size: 14px; color: #c8c0d8; letter-spacing: .5px; }
+
+  .confettis { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 5; }
+  .confettis i { position: absolute; top: -20px; width: 10px; height: 16px; border-radius: 3px; animation: tombe linear forwards; }
+  @keyframes tombe { to { transform: translateY(110vh) rotate(720deg); opacity: .6; } }
+
+  /* ---------- Réglages ---------- */
+  .reglages {
+    position: fixed; top: 0; right: 0; margin: 16px; padding: 14px;
+    border-radius: 20px; background: #1a0a33; border: 2px solid var(--or);
+    box-shadow: 0 10px 30px rgba(0,0,0,.6);
+    display: flex; gap: 12px; z-index: 10;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== ACCUEIL ===== -->
+<section id="ecran-accueil" class="ecran">
+  <div class="trio">🎤✨🎤</div>
+  <h1 class="titre">Les Chasseuses<br>des Nombres</h1>
+  <div class="apercu">
+    <span>3</span><span class="signe">+</span><span>2</span><span class="signe">=</span><span style="border-color:var(--vert)">5</span>
+  </div>
+  <button class="picto or grand" id="btn-jouer" aria-label="Jouer">▶</button>
+  <p class="accueil-pied"><a href="../index.html">← Le Grimoire</a></p>
+</section>
+
+<!-- ===== CHOIX DE NIVEAU ===== -->
+<section id="ecran-choix" class="ecran cache">
+  <div class="barre-haut">
+    <a class="picto" href="../index.html" aria-label="Retour au Grimoire">🏠</a>
+    <span class="espace"></span>
+    <button class="picto" id="btn-son-choix" aria-label="Son">🔊</button>
+    <button class="picto" id="btn-reglages" aria-label="Réglages">⚙️</button>
+  </div>
+  <div id="liste-niveaux"></div>
+</section>
+
+<!-- ===== MANCHE ===== -->
+<section id="ecran-manche" class="ecran cache">
+  <div class="barre-haut">
+    <button class="picto" id="btn-retour" aria-label="Retour aux niveaux">←</button>
+    <div class="chant"><div id="barre-chant"></div></div>
+    <button class="picto" id="btn-consigne" aria-label="Écouter la question">🔊</button>
+  </div>
+  <div class="rideau">♪ ♫ ♪</div>
+  <div class="carte-question" id="carte-question">
+    <div id="zone-question"></div>
+    <div class="aide cache" id="aide"></div>
+  </div>
+  <div class="outils">
+    <button class="picto" id="btn-aide" aria-label="Voir les objets">👀</button>
+  </div>
+  <div class="clavier" id="clavier"></div>
+</section>
+
+<!-- ===== BILAN ===== -->
+<section id="ecran-bilan" class="ecran cache">
+  <div class="grandes-etoiles" id="grandes-etoiles"><span>⭐</span><span>⭐</span><span>⭐</span></div>
+  <div class="bilan-titre" id="bilan-titre"></div>
+  <div class="bilan-boutons">
+    <div class="action"><button class="picto grand" id="btn-niveaux" aria-label="Choisir un niveau">←</button><span>Niveaux</span></div>
+    <div class="action"><button class="picto grand" id="btn-rejouer" aria-label="Rejouer">🔁</button><span>Rejouer</span></div>
+    <div class="action" id="action-suivant"><button class="picto or grand" id="btn-suivant" aria-label="Niveau suivant">▶</button><span>Suivant</span></div>
+  </div>
+</section>
+
+<div class="reglages cache" id="reglages">
+  <button class="picto" id="btn-son" aria-label="Couper ou remettre le son">🔊</button>
+  <button class="picto" id="btn-reset" aria-label="Réinitialiser la progression">🗑️</button>
+  <button class="picto" id="btn-fermer-reglages" aria-label="Fermer">✖</button>
+</div>
+
+<div class="confettis" id="confettis"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  const CLE_STOCKAGE = 'grimoire.chasseuses-nombres.v1';
+  const QUESTIONS_PAR_NIVEAU = 8;
+  const OBJETS = ['⭐', '💜', '🎤', '🎧', '🎶', '🔥'];
+  const MOTS_OBJETS = { '⭐': 'étoiles', '💜': 'cœurs', '🎤': 'micros', '🎧': 'casques', '🎶': 'notes', '🔥': 'flammes' };
+
+  // ---------- Outils aléatoires ----------
+  const entier = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const hasard = tab => tab[Math.floor(Math.random() * tab.length)];
+  function melanger(tab) {
+    const t = tab.slice();
+    for (let i = t.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [t[i], t[j]] = [t[j], t[i]]; }
+    return t;
+  }
+
+  // ---------- Rendu des morceaux de question ----------
+  const nb = n => `<span class="n">${n}</span>`;
+  const op = s => `<span class="op">${s}</span>`;
+  const TROU = `<span class="trou" id="trou">?</span>`;
+  function objets(n, classe) {
+    let s = '';
+    for (let i = 0; i < n; i++) s += `<span class="${classe || ''}">${objetCourant}</span>`;
+    return s;
+  }
+  const groupe = html => `<span class="groupe">${html}</span>`;
+  let objetCourant = '⭐';
+
+  // ---------- Générateurs de questions ----------
+  // Une question : { html, reponse, clavier: 'nombres'|'signes', maxi, aide, voix, cle }
+  const MOINS = '−';
+
+  function qCompter(maxi) {
+    const n = entier(1, maxi);
+    const cases = melanger([...Array(12).keys()]).slice(0, n);
+    let html = '<div class="boite">';
+    for (let i = 0; i < 12; i++) html += `<span>${cases.includes(i) ? objetCourant : ''}</span>`;
+    html += '</div>' + `<div class="question">${TROU}</div>`;
+    return { html, reponse: n, clavier: 'nombres', maxi, aide: '', voix: `Compte les ${MOTS_OBJETS[objetCourant]}. Combien y en a-t-il ?`, cle: 'c' + n + objetCourant + cases.join('') };
+  }
+
+  function qFile(maxi) {
+    const longueur = Math.min(6, maxi);
+    const debut = entier(1, maxi - longueur + 1);
+    const trou = entier(debut, debut + longueur - 1);
+    let html = '<div class="file">';
+    for (let v = debut; v < debut + longueur; v++) html += v === trou ? `<span class="case trou" id="trou">?</span>` : `<span class="case">${v}</span>`;
+    html += '</div>';
+    return { html, reponse: trou, clavier: 'nombres', maxi, aide: '', voix: 'Quel nombre manque dans la file ?', cle: 'f' + debut + '-' + trou };
+  }
+
+  function qAddition(maxi) {
+    const a = entier(0, maxi), b = entier(0, maxi - a);
+    return {
+      html: `<div class="question">${nb(a)}${op('+')}${nb(b)}${op('=')}${TROU}</div>`,
+      reponse: a + b, clavier: 'nombres', maxi,
+      aide: groupe(objets(a)) + `<span class="barre">+</span>` + groupe(objets(b)),
+      voix: `${a} plus ${b}, ça fait combien ?`, cle: `a${a}+${b}`,
+    };
+  }
+
+  function qSoustraction(maxi) {
+    const a = entier(1, maxi), b = entier(0, a);
+    return {
+      html: `<div class="question">${nb(a)}${op(MOINS)}${nb(b)}${op('=')}${TROU}</div>`,
+      reponse: a - b, clavier: 'nombres', maxi,
+      aide: groupe(objets(a - b) + objets(b, 'raye')),
+      voix: `${a} moins ${b}, ça fait combien ?`, cle: `s${a}-${b}`,
+    };
+  }
+
+  function qMaison(cibles, maxi) {
+    const N = hasard(cibles), a = entier(0, N);
+    return {
+      html: `<div class="question">${nb(a)}${op('+')}${TROU}${op('=')}${nb(N)}</div>`,
+      reponse: N - a, clavier: 'nombres', maxi,
+      aide: groupe(objets(a) + objets(N - a, 'fantome')),
+      voix: `${a} plus combien, égale ${N} ?`, cle: `m${a}+?=${N}`,
+    };
+  }
+
+  function qAdditionTrou(maxi) {
+    const a = entier(0, maxi), c = entier(a, maxi);
+    return {
+      html: `<div class="question">${nb(a)}${op('+')}${TROU}${op('=')}${nb(c)}</div>`,
+      reponse: c - a, clavier: 'nombres', maxi,
+      aide: groupe(objets(a) + objets(c - a, 'fantome')),
+      voix: `${a} plus combien, égale ${c} ?`, cle: `t${a}+?=${c}`,
+    };
+  }
+
+  function qSoustractionTrou(maxi) {
+    const a = entier(1, maxi), c = entier(0, a);
+    return {
+      html: `<div class="question">${nb(a)}${op(MOINS)}${TROU}${op('=')}${nb(c)}</div>`,
+      reponse: a - c, clavier: 'nombres', maxi,
+      aide: groupe(objets(c) + objets(a - c, 'raye')),
+      voix: `${a} moins combien, égale ${c} ?`, cle: `u${a}-?=${c}`,
+    };
+  }
+
+  function qDouble() {
+    const a = entier(0, 5);
+    return {
+      html: `<div class="question">${nb(a)}${op('+')}${nb(a)}${op('=')}${TROU}</div>`,
+      reponse: a + a, clavier: 'nombres', maxi: 10,
+      aide: groupe(objets(a)) + `<span class="barre">+</span>` + groupe(objets(a)),
+      voix: `Le double de ${a}. ${a} plus ${a}, ça fait combien ?`, cle: `d${a}`,
+    };
+  }
+
+  function qComparer() {
+    let a = entier(0, 10), b = entier(0, 10);
+    if (Math.random() < 0.2) b = a;               // un cinquième d'égalités
+    const rep = a < b ? '<' : a > b ? '>' : '=';
+    return {
+      html: `<div class="question">${nb(a)}${TROU}${nb(b)}</div>`,
+      reponse: rep, clavier: 'signes', maxi: 10,
+      aide: groupe(objets(a)) + `<span class="barre-v"></span>` + groupe(objets(b)),
+      voix: `Compare ${a} et ${b}. Plus petit, égal, ou plus grand ?`, cle: `k${a}?${b}`,
+    };
+  }
+
+  function qFinal() {
+    return hasard([
+      () => qAddition(10), () => qSoustraction(10), () => qAdditionTrou(10),
+      () => qSoustractionTrou(10), () => qMaison([10], 10), () => qComparer(), () => qDouble(),
+    ])();
+  }
+
+  // ---------- Niveaux ----------
+  const NIVEAUX = [
+    { id: 1,  groupe: "Jusqu'à 5",       nom: 'Compter',                icone: '🔢', exemple: '⭐⭐⭐ → 3',   gen: () => qCompter(5) },
+    { id: 2,  groupe: "Jusqu'à 5",       nom: 'La file des nombres',    icone: '🎵', exemple: '1 2 ? 4 5',   gen: () => qFile(5) },
+    { id: 3,  groupe: "Jusqu'à 5",       nom: "L'addition",             icone: '➕', exemple: '2 + 3 = ?',   gen: () => qAddition(5) },
+    { id: 4,  groupe: "Jusqu'à 5",       nom: 'La soustraction',        icone: '➖', exemple: '5 − 2 = ?',   gen: () => qSoustraction(5) },
+    { id: 5,  groupe: "Jusqu'à 5",       nom: "Les maisons jusqu'à 5",  icone: '🏠', exemple: '2 + ? = 5',   gen: () => qMaison([2, 3, 4, 5], 5) },
+    { id: 6,  groupe: "Jusqu'à 10",      nom: 'Compter',                icone: '🔢', exemple: '⭐⭐⭐⭐⭐⭐⭐ → 7', gen: () => qCompter(10) },
+    { id: 7,  groupe: "Jusqu'à 10",      nom: 'La file des nombres',    icone: '🎵', exemple: '5 ? 7 8 ? 10', gen: () => qFile(10) },
+    { id: 8,  groupe: "Jusqu'à 10",      nom: "L'addition",             icone: '➕', exemple: '6 + 2 = ?',   gen: () => qAddition(10) },
+    { id: 9,  groupe: "Jusqu'à 10",      nom: 'La soustraction',        icone: '➖', exemple: '9 − 5 = ?',   gen: () => qSoustraction(10) },
+    { id: 10, groupe: "Jusqu'à 10",      nom: 'Comparer',               icone: '⚖️', exemple: '5 ? 2',       gen: () => qComparer() },
+    { id: 11, groupe: 'Les maisons',     nom: 'Les maisons du 6 au 9',  icone: '🏠', exemple: '4 + ? = 7',   gen: () => qMaison([6, 7, 8, 9], 10) },
+    { id: 12, groupe: 'Les maisons',     nom: 'La maison du 10',        icone: '🏠', exemple: '3 + ? = 10',  gen: () => qMaison([10], 10) },
+    { id: 13, groupe: 'Les maisons',     nom: "L'addition à trou",      icone: '❓', exemple: '1 + ? = 3',   gen: () => qAdditionTrou(10) },
+    { id: 14, groupe: 'Les maisons',     nom: 'La soustraction à trou', icone: '❓', exemple: '7 − ? = 5',   gen: () => qSoustractionTrou(10) },
+    { id: 15, groupe: 'Le grand final',  nom: 'Les doubles',            icone: '👯', exemple: '4 + 4 = ?',   gen: () => qDouble() },
+    { id: 16, groupe: 'Le grand final',  nom: 'Le concert final',       icone: '🎆', exemple: 'Tout mélangé', gen: () => qFinal() },
+  ];
+
+  // ---------- Progression ----------
+  let progression = { niveaux: {}, son: true };
+  function charger() {
+    try {
+      const brut = localStorage.getItem(CLE_STOCKAGE);
+      if (brut) { const p = JSON.parse(brut); progression = { niveaux: p.niveaux || {}, son: p.son !== false }; }
+    } catch (e) { /* stockage bloqué : on joue sans mémoire */ }
+  }
+  function sauvegarder() {
+    try { localStorage.setItem(CLE_STOCKAGE, JSON.stringify(progression)); } catch (e) { /* idem */ }
+  }
+  const etoilesDe = id => (progression.niveaux[id] || {}).etoiles || 0;
+  const niveauOuvert = id => id === 1 || etoilesDe(id - 1) > 0;
+  const calculerEtoiles = erreurs => erreurs === 0 ? 3 : erreurs <= 2 ? 2 : 1;
+
+  // ---------- Manche (testable isolément) ----------
+  function genererManche(niveauId) {
+    const niveau = NIVEAUX.find(n => n.id === niveauId);
+    const questions = [];
+    const cles = new Set();
+    let essais = 0;
+    while (questions.length < QUESTIONS_PAR_NIVEAU && essais++ < 200) {
+      objetCourant = hasard(OBJETS);
+      const q = niveau.gen();
+      // ponytail: on évite les doublons tant qu'on peut ; certains niveaux n'ont que 5 questions possibles
+      if (cles.has(q.cle) && essais < 60) continue;
+      cles.add(q.cle);
+      questions.push(q);
+    }
+    return { niveauId, questions, index: 0, erreurs: 0, erreursQuestion: 0 };
+  }
+
+  // Renvoie true si la réponse est bonne. Met à jour la manche.
+  function valider(manche, reponse) {
+    const q = manche.questions[manche.index];
+    if (String(reponse) === String(q.reponse)) return true;
+    manche.erreurs++;
+    manche.erreursQuestion++;
+    return false;
+  }
+
+  // ---------- Sons (Web Audio, aucun fichier) ----------
+  let ctxAudio = null;
+  function audio() {
+    if (!progression.son) return null;
+    try {
+      if (!ctxAudio) ctxAudio = new (window.AudioContext || window.webkitAudioContext)();
+      if (ctxAudio.state === 'suspended') ctxAudio.resume();
+      return ctxAudio;
+    } catch (e) { return null; }
+  }
+  function jouer(notes, type) {
+    const c = audio();
+    if (!c) return;
+    let t = c.currentTime;
+    notes.forEach(([f, d]) => {
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = type || 'triangle';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      o.connect(g).connect(c.destination);
+      o.start(t); o.stop(t + d);
+      t += d * 0.85;
+    });
+  }
+  const SON = {
+    tap:     () => jouer([[660, .08]], 'sine'),
+    bon:     () => jouer([[523, .1], [659, .1], [784, .18]]),
+    mauvais: () => jouer([[330, .14], [247, .22]], 'sawtooth'),
+    fin:     () => jouer([[523, .12], [659, .12], [784, .12], [1047, .3], [784, .1], [1047, .4]]),
+  };
+
+  // ---------- Voix ----------
+  function parler(texte) {
+    if (!progression.son || !('speechSynthesis' in window)) return;
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(texte);
+      u.lang = 'fr-FR';
+      u.rate = 0.9;
+      const voix = speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith('fr'));
+      if (voix) u.voice = voix;
+      else if (speechSynthesis.getVoices().length) return;
+      speechSynthesis.speak(u);
+    } catch (e) { /* silence */ }
+  }
+
+  // ---------- Écrans ----------
+  const $ = id => document.getElementById(id);
+  function montrer(id) {
+    ['ecran-accueil', 'ecran-choix', 'ecran-manche', 'ecran-bilan'].forEach(e => $(e).classList.toggle('cache', e !== id));
+    window.scrollTo(0, 0);
+  }
+
+  // ---------- Choix de niveau ----------
+  function etoilesHTML(n) {
+    let s = '';
+    for (let i = 1; i <= 3; i++) s += `<span class="${i <= n ? '' : 'vide'}">⭐</span>`;
+    return s;
+  }
+  function rendreChoix() {
+    const conteneur = $('liste-niveaux');
+    conteneur.innerHTML = '';
+    let groupeCourant = null, grille = null;
+    NIVEAUX.forEach(niveau => {
+      if (niveau.groupe !== groupeCourant) {
+        groupeCourant = niveau.groupe;
+        const titre = document.createElement('div');
+        titre.className = 'groupe-titre';
+        titre.textContent = groupeCourant;
+        conteneur.appendChild(titre);
+        grille = document.createElement('div');
+        grille.className = 'niveaux';
+        grille.style.marginTop = '10px';
+        grille.style.marginBottom = '18px';
+        conteneur.appendChild(grille);
+      }
+      const ouvert = niveauOuvert(niveau.id);
+      const carte = document.createElement('button');
+      carte.className = 'carte-niveau ' + (ouvert ? 'ouverte' : 'verrou');
+      carte.innerHTML = `
+        <span class="icone">${ouvert ? niveau.icone : '🔒'}</span>
+        <span class="infos">
+          <span class="nom">${niveau.id}. ${niveau.nom}</span>
+          <span class="exemple">${niveau.exemple}</span>
+          <span class="etoiles">${etoilesHTML(etoilesDe(niveau.id))}</span>
+        </span>`;
+      carte.addEventListener('click', () => {
+        if (!ouvert) { SON.mauvais(); return; }
+        parler(niveau.nom);
+        demarrerManche(niveau.id);
+      });
+      grille.appendChild(carte);
+    });
+  }
+
+  // ---------- Manche ----------
+  let manche = null;
+  let verrou = false;
+
+  function demarrerManche(niveauId) {
+    manche = genererManche(niveauId);
+    verrou = false;
+    $('barre-chant').style.width = '0%';
+    montrer('ecran-manche');
+    rendreQuestion();
+  }
+
+  function rendreQuestion() {
+    const q = manche.questions[manche.index];
+    manche.erreursQuestion = 0;
+    $('zone-question').innerHTML = q.html;
+    $('aide').innerHTML = q.aide;
+    $('aide').classList.add('cache');
+    $('btn-aide').classList.toggle('cache', !q.aide);
+    $('carte-question').classList.remove('reussi');
+
+    const clavier = $('clavier');
+    clavier.innerHTML = '';
+    clavier.className = 'clavier' + (q.clavier === 'signes' ? ' signes' : '');
+    const touches = q.clavier === 'signes' ? ['<', '=', '>'] : [...Array(q.maxi + 1).keys()];
+    touches.forEach(v => {
+      const t = document.createElement('button');
+      t.className = 'touche';
+      t.dataset.valeur = v;
+      t.textContent = v;
+      t.addEventListener('click', () => tapTouche(v, t));
+      clavier.appendChild(t);
+    });
+  }
+
+  function montrerAide() {
+    const q = manche.questions[manche.index];
+    if (!q.aide) return;
+    $('aide').classList.remove('cache');
+  }
+
+  function tapTouche(valeur, touche) {
+    if (verrou) return;
+    const q = manche.questions[manche.index];
+    const ok = valider(manche, valeur);
+    const carte = $('carte-question');
+    const trou = $('trou');
+
+    if (ok) {
+      verrou = true;
+      $('clavier').classList.add('verrou');
+      touche.classList.add('bon');
+      touche.classList.remove('aide');
+      trou.textContent = q.reponse;
+      trou.classList.add('ok');
+      carte.classList.add('reussi');
+      SON.bon();
+      $('barre-chant').style.width = ((manche.index + 1) / manche.questions.length * 100) + '%';
+      setTimeout(() => {
+        verrou = false;
+        manche.index++;
+        if (manche.index >= manche.questions.length) finirManche();
+        else rendreQuestion();
+      }, 900);
+    } else {
+      verrou = true;
+      touche.classList.add('faux');
+      carte.classList.add('tremble');
+      SON.mauvais();
+      if (manche.erreursQuestion >= 1) montrerAide();
+      if (manche.erreursQuestion >= 2) {
+        const bonne = $('clavier').querySelector(`[data-valeur="${q.reponse}"]`);
+        if (bonne) bonne.classList.add('aide');
+      }
+      setTimeout(() => { carte.classList.remove('tremble'); verrou = false; }, 500);
+    }
+  }
+
+  // ---------- Bilan ----------
+  function finirManche() {
+    const etoiles = calculerEtoiles(manche.erreurs);
+    const actuel = etoilesDe(manche.niveauId);
+    progression.niveaux[manche.niveauId] = { etoiles: Math.max(actuel, etoiles) };
+    sauvegarder();
+
+    const spans = $('grandes-etoiles').children;
+    for (let k = 0; k < 3; k++) spans[k].classList.toggle('on', k < etoiles);
+    const niveau = NIVEAUX.find(n => n.id === manche.niveauId);
+    $('bilan-titre').textContent = niveau.nom;
+    const suivant = NIVEAUX.find(n => n.id === manche.niveauId + 1);
+    $('action-suivant').classList.toggle('cache', !suivant);
+
+    setTimeout(() => { SON.fin(); confettis(); }, 400);
+    montrer('ecran-bilan');
+  }
+
+  function confettis() {
+    const c = $('confettis');
+    c.innerHTML = '';
+    const couleurs = ['#ff3fb4', '#3ee6ff', '#ffcc4d', '#fff'];
+    for (let k = 0; k < 60; k++) {
+      const i = document.createElement('i');
+      i.style.left = Math.random() * 100 + 'vw';
+      i.style.background = couleurs[k % couleurs.length];
+      i.style.animationDuration = (2 + Math.random() * 2) + 's';
+      i.style.animationDelay = Math.random() * 1.2 + 's';
+      c.appendChild(i);
+    }
+    setTimeout(() => { c.innerHTML = ''; }, 5000);
+  }
+
+  // ---------- Réglages ----------
+  let resetArme = null;
+  function rendreSon() {
+    ['btn-son', 'btn-son-choix'].forEach(id => {
+      $(id).textContent = progression.son ? '🔊' : '🔇';
+      $(id).classList.toggle('coupe', !progression.son);
+    });
+  }
+  function basculerSon() {
+    progression.son = !progression.son;
+    if (!progression.son && 'speechSynthesis' in window) speechSynthesis.cancel();
+    sauvegarder();
+    rendreSon();
+    if (progression.son) SON.tap();
+  }
+
+  // ---------- Branchement ----------
+  $('btn-jouer').addEventListener('click', () => { audio(); parler('Choisis un niveau'); rendreChoix(); montrer('ecran-choix'); });
+  $('btn-retour').addEventListener('click', () => { rendreChoix(); montrer('ecran-choix'); });
+  $('btn-niveaux').addEventListener('click', () => { rendreChoix(); montrer('ecran-choix'); });
+  $('btn-rejouer').addEventListener('click', () => demarrerManche(manche.niveauId));
+  $('btn-suivant').addEventListener('click', () => demarrerManche(manche.niveauId + 1));
+  $('btn-consigne').addEventListener('click', () => parler(manche.questions[manche.index].voix));
+  $('btn-aide').addEventListener('click', () => { SON.tap(); montrerAide(); });
+  $('btn-son').addEventListener('click', basculerSon);
+  $('btn-son-choix').addEventListener('click', basculerSon);
+  $('btn-reglages').addEventListener('click', () => $('reglages').classList.remove('cache'));
+  $('btn-fermer-reglages').addEventListener('click', () => $('reglages').classList.add('cache'));
+  // Réinitialisation en deux taps (pas de boîte de dialogue à lire)
+  $('btn-reset').addEventListener('click', () => {
+    const b = $('btn-reset');
+    if (resetArme) {
+      clearTimeout(resetArme); resetArme = null;
+      progression.niveaux = {};
+      sauvegarder();
+      b.classList.remove('confirme'); b.textContent = '🗑️';
+      $('reglages').classList.add('cache');
+      rendreChoix();
+      SON.mauvais();
+      return;
+    }
+    b.classList.add('confirme'); b.textContent = '❓';
+    resetArme = setTimeout(() => { resetArme = null; b.classList.remove('confirme'); b.textContent = '🗑️'; }, 3000);
+  });
+
+  // ---------- Vérification au chargement ----------
+  (function verifier() {
+    NIVEAUX.forEach((n, i) => { if (n.id !== i + 1) console.warn('Identifiants de niveaux non consécutifs :', n.id); });
+    if (calculerEtoiles(0) !== 3 || calculerEtoiles(2) !== 2 || calculerEtoiles(3) !== 1) console.warn('calculerEtoiles incohérent');
+    // Chaque niveau : 8 questions distinctes, réponse toujours sur le clavier proposé
+    NIVEAUX.forEach(n => {
+      for (let k = 0; k < 20; k++) {
+        const m = genererManche(n.id);
+        if (m.questions.length !== QUESTIONS_PAR_NIVEAU) console.warn('Niveau', n.id, ': seulement', m.questions.length, 'questions');
+        m.questions.forEach(q => {
+          const touches = q.clavier === 'signes' ? ['<', '=', '>'] : [...Array(q.maxi + 1).keys()];
+          if (!touches.map(String).includes(String(q.reponse))) console.warn('Niveau', n.id, ': réponse hors clavier', q);
+          if (!q.html.includes('id="trou"')) console.warn('Niveau', n.id, ': question sans trou', q);
+        });
+      }
+    });
+    const m = genererManche(3);
+    const bonne = m.questions[0].reponse;
+    if (valider(m, bonne + 1) !== false || m.erreurs !== 1 || valider(m, bonne) !== true) console.warn('valider incohérent');
+  })();
+
+  // ---------- Démarrage ----------
+  charger();
+  rendreSon();
+  if ('speechSynthesis' in window) speechSynthesis.getVoices();
+})();
+</script>
+</body>
+</html>

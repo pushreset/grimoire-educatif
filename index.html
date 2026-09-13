@@ -162,6 +162,36 @@
     --card-accent-dark: #11487f;
     --card-tint: rgba(31, 127, 224, 0.1);
   }
+  .card.chasseuses {
+    --card-accent: #d63aa6;
+    --card-accent-dark: #7a1c5e;
+    --card-tint: rgba(214, 58, 166, 0.1);
+  }
+  .card.nombres {
+    --card-accent: #22b8c9;
+    --card-accent-dark: #126a75;
+    --card-tint: rgba(34, 184, 201, 0.1);
+  }
+
+  .niveau {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 0 0 20px;
+  }
+  .niveau + .grid { margin-bottom: 44px; }
+  .niveau h2 {
+    font-size: clamp(20px, 3.5vw, 26px);
+    color: var(--accent);
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+  .niveau::before, .niveau::after {
+    content: '';
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(212,168,54,.5), transparent);
+  }
 
   footer {
     margin-top: 48px;
@@ -179,6 +209,26 @@
 </header>
 
 <main>
+  <div class="niveau"><h2>🎒 CP</h2></div>
+  <div class="grid">
+
+    <a class="card chasseuses" href="chasseuses-alphabet/index.html">
+      <div class="card-icon">🎤</div>
+      <div class="card-title">Les Chasseuses de l'Alphabet</div>
+      <p class="card-desc">Relie chaque lettre d'imprimerie à sa lettre attachée. Cinq scènes de concert, des talismans à poser, aucun chrono. Se joue sans savoir lire.</p>
+      <span class="card-cta">Monter sur scène →</span>
+    </a>
+
+    <a class="card nombres" href="chasseuses-nombres/index.html">
+      <div class="card-icon">🔢</div>
+      <div class="card-title">Les Chasseuses des Nombres</div>
+      <p class="card-desc">Calcul CP en tournée : compter, additions, soustractions, maisons des nombres, comparer. Seize niveaux, aucun chrono, une aide en objets à chaque erreur.</p>
+      <span class="card-cta">Partir en tournée →</span>
+    </a>
+
+  </div>
+
+  <div class="niveau"><h2>📚 CM</h2></div>
   <div class="grid">
 
     <a class="card donjon" href="donjon-multiplication/index.html">
