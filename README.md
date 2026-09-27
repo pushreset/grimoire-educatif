@@ -32,6 +32,9 @@ Chasse aux fautes d'accord (CE2) sur les lettres d'un vieux capitaine pirate. Co
 #### 🪂 [Battle Royale du Passé Composé](battle-royale-passe-compose/)
 Le passé composé de CM1 (leçons C4 et C5) dans une ambiance battle royale. Quatre zones progressives : choisir l'auxiliaire, former le participe passé, accorder avec *être*, puis tout à la fois. Trois boucliers, coffres de loot entre les zones, mode Tempête chronométré, récapitulatif des erreurs à la fin.
 
+#### 🗺️ [Le Carnet de Voyage du Présent](carnet-voyage-present/)
+Le présent de l'indicatif en CM1 : les 20 verbes du 3e groupe à maîtriser (aller, faire, prendre, rendre, dire, mettre, pouvoir, vouloir, voir, devoir, vivre, rire, lire, écrire, tenir, dormir, courir, savoir, croire, boire) + être et avoir. Une classe verte racontée en six pages, une phrase à compléter par étape, toutes les personnes de conjugaison. QCM ou mode écrivain (on tape la forme). Bonus : les dominos, où l'on accroche la forme conjuguée au pronom et à l'infinitif du domino précédent. Chaque erreur affiche le tableau du verbe.
+
 ## Structure
 
 ```

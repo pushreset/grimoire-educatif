@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Carnet de Voyage du Présent</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --papier: #fffaf0;
+    --papier-2: #f4ead2;
+    --ligne: rgba(90, 140, 190, 0.18);
+    --encre: #2b2a33;
+    --encre-douce: #6b6676;
+    --foret: #2f7d4f;
+    --foret-fonce: #1f5436;
+    --soleil: #f08a3c;
+    --soleil-fonce: #b35a1a;
+    --ciel: #3f8fc4;
+    --vert: #2f9e5a;
+    --rouge: #d9463b;
+    --scotch: rgba(240, 205, 130, 0.75);
+  }
+
+  html, body { min-height: 100vh; min-height: 100dvh; }
+
+  body {
+    font-family: 'Trebuchet MS', 'Comic Sans MS', sans-serif;
+    background:
+      radial-gradient(ellipse at 80% 0%, rgba(255,220,150,0.6) 0%, transparent 45%),
+      linear-gradient(180deg, #a9d8f2 0%, #d8eef5 45%, #cfe6c0 75%, #9fcb8a 100%);
+    background-attachment: fixed;
+    color: var(--encre);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 60px 16px 24px;
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+  }
+
+  /* le carnet : page lignée avec une marge rouge, un bout de scotch en haut */
+  .carnet {
+    position: relative;
+    width: 100%;
+    max-width: 680px;
+    background:
+      linear-gradient(90deg, transparent 38px, rgba(217,70,59,0.35) 38px, rgba(217,70,59,0.35) 40px, transparent 40px),
+      repeating-linear-gradient(180deg, transparent 0 31px, var(--ligne) 31px 32px),
+      var(--papier);
+    border-radius: 6px 18px 18px 6px;
+    padding: 30px 22px 30px 54px;
+    box-shadow: 0 18px 50px rgba(30, 60, 40, 0.35), -6px 0 0 var(--foret-fonce);
+  }
+  .carnet::before {
+    content: '';
+    position: absolute;
+    top: -14px; left: 50%;
+    width: 120px; height: 28px;
+    transform: translateX(-50%) rotate(-3deg);
+    background: var(--scotch);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  }
+
+  h1 {
+    text-align: center;
+    font-size: clamp(24px, 5.5vw, 34px);
+    color: var(--foret-fonce);
+    letter-spacing: .5px;
+  }
+
+  .sous-titre {
+    text-align: center;
+    color: var(--encre-douce);
+    font-size: 15px;
+    margin: 8px 0 20px;
+    line-height: 1.55;
+  }
+  .sous-titre b { color: var(--soleil-fonce); }
+
+  .embleme { font-size: 64px; text-align: center; animation: flotte 4s ease-in-out infinite; }
+  @keyframes flotte {
+    0%, 100% { transform: rotate(-4deg) translateY(0); }
+    50%      { transform: rotate(4deg) translateY(-6px); }
+  }
+
+  .bloc {
+    background: rgba(255,255,255,0.7);
+    border: 2px dashed rgba(47,125,79,0.35);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+  .bloc-titre {
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--foret);
+    margin-bottom: 12px;
+    text-align: center;
+    font-weight: bold;
+  }
+
+  /* ---------- liste des pages (chapitres) ---------- */
+
+  .chapitres { display: grid; gap: 10px; }
+
+  .chapitre-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 64px;
+    text-align: left;
+    background: #fff;
+    border: 2px solid rgba(47,125,79,0.25);
+    border-radius: 12px;
+    padding: 10px 12px;
+    color: var(--encre);
+    font-family: inherit;
+    font-size: 15px;
+    cursor: pointer;
+    transition: transform .1s, border-color .2s, box-shadow .2s;
+  }
+  .chapitre-btn:hover:not(:disabled) {
+    border-color: var(--foret);
+    box-shadow: 0 4px 12px rgba(47,125,79,0.18);
+    transform: translateY(-2px);
+  }
+  .chapitre-btn:disabled { opacity: .5; cursor: not-allowed; }
+  .chapitre-emoji { flex: 0 0 44px; font-size: 30px; text-align: center; }
+  .chapitre-txt { flex: 1; }
+  .chapitre-txt strong { display: block; font-size: 16px; color: var(--foret-fonce); }
+  .chapitre-txt span { font-size: 12.5px; color: var(--encre-douce); }
+  .chapitre-etoiles { font-size: 16px; color: var(--soleil); letter-spacing: 1px; white-space: nowrap; }
+
+  /* ---------- boutons ---------- */
+
+  .gros-btn {
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+    padding: 15px;
+    min-height: 56px;
+    border: none;
+    border-radius: 14px;
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: bold;
+    color: #fff;
+    background: linear-gradient(180deg, #43a066, var(--foret));
+    box-shadow: 0 5px 0 var(--foret-fonce);
+    cursor: pointer;
+    transition: transform .1s, box-shadow .1s;
+  }
+  .gros-btn:hover { transform: translateY(-2px); box-shadow: 0 7px 0 var(--foret-fonce); }
+  .gros-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--foret-fonce); }
+  .gros-btn.soleil { background: linear-gradient(180deg, #f7a462, var(--soleil)); box-shadow: 0 5px 0 var(--soleil-fonce); }
+  .gros-btn.soleil:hover { box-shadow: 0 7px 0 var(--soleil-fonce); }
+  .gros-btn.soleil:active { box-shadow: 0 2px 0 var(--soleil-fonce); }
+  .gros-btn.blanc { color: var(--foret-fonce); background: #fff; box-shadow: 0 5px 0 rgba(47,125,79,0.35); border: 2px solid rgba(47,125,79,0.35); }
+
+  .btn-rond {
+    flex: 0 0 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid rgba(47,125,79,0.35);
+    background: #fff;
+    font-size: 20px;
+    color: var(--foret-fonce);
+    cursor: pointer;
+  }
+
+  .interrupteur {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13.5px;
+    color: var(--encre-douce);
+  }
+  .interrupteur strong { color: var(--encre); display: block; font-size: 15px; }
+  .bascule {
+    flex: 0 0 58px;
+    height: 30px;
+    border-radius: 999px;
+    background: #d9d4c7;
+    position: relative;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .bascule::after {
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    transition: transform .2s;
+  }
+  .bascule.on { background: var(--foret); }
+  .bascule.on::after { transform: translateX(28px); }
+
+  /* ---------- HUD ---------- */
+
+  .hud { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .hud-titre { flex: 1; font-weight: bold; color: var(--foret-fonce); font-size: 16px; }
+  .hud-compteur { font-size: 14px; color: var(--encre-douce); white-space: nowrap; }
+
+  .progres {
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(47,125,79,0.12);
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .progres-barre {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--foret), var(--soleil));
+    transition: width .4s;
+  }
+
+  .intro {
+    font-size: 14px;
+    font-style: italic;
+    color: var(--encre-douce);
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+
+  /* ---------- phrase ---------- */
+
+  .page {
+    background: #fff;
+    border-radius: 4px;
+    padding: 20px 16px;
+    margin-bottom: 16px;
+    box-shadow: 2px 3px 0 rgba(0,0,0,0.08);
+    transform: rotate(-0.6deg);
+  }
+
+  .phrase { font-size: clamp(19px, 4.4vw, 23px); line-height: 1.8; }
+
+  .trou {
+    display: inline-block;
+    min-width: 80px;
+    text-align: center;
+    border-bottom: 3px dashed var(--ciel);
+    color: var(--ciel);
+    font-weight: bold;
+  }
+  /* le trou affiche TOUJOURS la bonne réponse en vert : l'erreur est signalée
+     par le bouton rouge et l'encadré d'explication, jamais par le mot correct. */
+  .trou.rempli { border-bottom-style: solid; border-bottom-color: var(--vert); color: var(--vert); }
+  .infinitif { color: var(--soleil-fonce); font-size: .8em; white-space: nowrap; }
+
+  .options { display: grid; gap: 10px; }
+  @media (min-width: 520px) { .options { grid-template-columns: 1fr 1fr; } }
+
+  .option {
+    min-height: 60px;
+    background: #fff;
+    border: 2px solid rgba(63,143,196,0.35);
+    border-radius: 14px;
+    padding: 12px 10px;
+    font-family: inherit;
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--encre);
+    cursor: pointer;
+    transition: transform .1s, background .15s, border-color .15s;
+  }
+  .option:hover:not(:disabled) { border-color: var(--ciel); background: #eef7fd; transform: translateY(-2px); }
+  .option:disabled { cursor: default; }
+  .option.bonne { background: #e3f6ea; border-color: var(--vert); color: var(--foret-fonce); animation: pop .35s; }
+  .option.mauvaise { background: #fde8e6; border-color: var(--rouge); color: #8e2a22; animation: secousse .35s; }
+
+  @keyframes pop { 0%,100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+  @keyframes secousse {
+    0%,100% { transform: translateX(0); } 25% { transform: translateX(-7px); } 75% { transform: translateX(7px); }
+  }
+
+  /* ---------- saisie (mode écrivain) ---------- */
+
+  .saisie { display: flex; gap: 10px; flex-wrap: wrap; }
+  .saisie input {
+    flex: 1 1 200px;
+    min-height: 56px;
+    font-family: inherit;
+    font-size: 22px;
+    padding: 0 14px;
+    border: 3px solid rgba(63,143,196,0.45);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--encre);
+  }
+  .saisie input:focus { outline: none; border-color: var(--ciel); }
+  .saisie input.juste { border-color: var(--vert); background: #e3f6ea; }
+  .saisie input.faux { border-color: var(--rouge); background: #fde8e6; animation: secousse .35s; }
+  .saisie .gros-btn { flex: 0 0 auto; width: auto; margin: 0; padding: 0 22px; }
+  .accents { display: flex; gap: 8px; width: 100%; }
+  .accent {
+    min-width: 52px; min-height: 44px;
+    border-radius: 10px;
+    border: 2px solid rgba(47,125,79,0.3);
+    background: #fff;
+    font-family: inherit;
+    font-size: 20px;
+    cursor: pointer;
+  }
+
+  /* ---------- retour ---------- */
+
+  .retour-info {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    font-size: 15px;
+    line-height: 1.6;
+    display: none;
+  }
+  .retour-info.visible { display: block; }
+  .retour-info.ok { background: #e3f6ea; border: 2px solid rgba(47,158,90,0.45); }
+  .retour-info.ko { background: #fdecea; border: 2px solid rgba(217,70,59,0.4); }
+  .retour-info b { color: var(--foret-fonce); }
+  .retour-info .note { display: block; margin-top: 6px; color: var(--soleil-fonce); }
+
+  .tableau {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 18px;
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.75);
+    border-radius: 8px;
+    font-size: 15px;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(3, auto);
+  }
+  .tableau .ici { background: #fff3c4; border-radius: 4px; font-weight: bold; padding: 0 4px; margin: 0 -4px; }
+
+  /* ---------- dominos ---------- */
+
+  .consigne { font-size: 14.5px; color: var(--encre-douce); margin-bottom: 12px; text-align: center; }
+
+  .domino {
+    display: inline-flex;
+    align-items: stretch;
+    min-height: 60px;
+    background: #fff;
+    border: 2px solid #3b3a44;
+    border-radius: 10px;
+    font-family: inherit;
+    color: var(--encre);
+    box-shadow: 2px 3px 0 rgba(0,0,0,0.15);
+    overflow: hidden;
+  }
+  .domino .moitie {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    min-width: 72px;
+    font-size: 18px;
+    font-weight: bold;
+  }
+  .domino .moitie + .moitie { border-left: 2px solid #3b3a44; }
+  .domino .moitie small { font-size: 12px; font-weight: normal; color: var(--encre-douce); }
+  .domino .forme { color: var(--ciel); }
+  .domino .question { background: #fff8e6; color: var(--soleil-fonce); }
+
+  .chaine {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+    min-height: 76px;
+    padding: 10px;
+    margin-bottom: 16px;
+    background: rgba(47,125,79,0.08);
+    border-radius: 12px;
+  }
+  .chaine .domino { transform: scale(.9); }
+  .chaine .domino.bout { animation: attente 1.3s ease-in-out infinite; border-color: var(--soleil); }
+  .chaine .domino.pose { animation: pose .35s; }
+  .chaine .ellipse { color: var(--encre-douce); font-size: 20px; }
+  @keyframes attente { 0%,100% { box-shadow: 0 0 0 0 rgba(240,138,60,0.5); } 50% { box-shadow: 0 0 0 7px rgba(240,138,60,0); } }
+  @keyframes pose { 0% { transform: scale(.4); opacity: 0; } 100% { transform: scale(.9); opacity: 1; } }
+
+  .main { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .main .domino { width: 100%; cursor: pointer; transition: transform .1s; }
+  .main .domino:hover:not(:disabled) { transform: translateY(-3px); }
+  .main .domino.mauvaise { border-color: var(--rouge); animation: secousse .35s; }
+  .main .domino.aide { border-color: var(--vert); animation: pulse-aide 1.1s ease-in-out infinite; }
+  @keyframes pulse-aide { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+  /* ---------- bilan ---------- */
+
+  .fin { text-align: center; }
+  .fin-emoji { font-size: 68px; margin-bottom: 6px; }
+  .etoiles { font-size: 46px; letter-spacing: 6px; color: var(--soleil); margin: 10px 0 4px; }
+  .etoiles span { display: inline-block; animation: etoile .5s backwards; }
+  .etoiles .vide { color: #d9d4c7; }
+  @keyframes etoile { 0% { transform: scale(0) rotate(-90deg); } 100% { transform: scale(1) rotate(0); } }
+
+  .recap { text-align: left; margin: 14px 0 4px; font-size: 14.5px; line-height: 1.6; }
+  .recap-titre { color: var(--soleil-fonce); font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; font-weight: bold; }
+  .recap li { list-style: none; margin-bottom: 6px; padding-left: 20px; position: relative; }
+  .recap li::before { content: '✎'; position: absolute; left: 0; color: var(--soleil); }
+  .recap b { color: var(--vert); }
+
+  .bilan-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+  .bilan-btns #bilan-suivant { grid-column: 1 / -1; }
+
+  .aide-txt { margin-top: 12px; font-size: 13px; color: var(--encre-douce); text-align: center; }
+  .aide-txt b { color: var(--foret-fonce); }
+
+  .cache { display: none !important; }
+
+  .lien-maison {
+    position: fixed;
+    top: 12px; left: 12px;
+    background: #fff;
+    border: 2px solid rgba(47,125,79,0.4);
+    color: var(--foret-fonce);
+    text-decoration: none;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: bold;
+    z-index: 10;
+  }
+  .lien-maison:hover { background: #eef7ef; }
+
+  @media (max-width: 420px) {
+    .carnet { padding: 26px 14px 26px 46px; }
+    .carnet { background:
+      linear-gradient(90deg, transparent 30px, rgba(217,70,59,0.35) 30px, rgba(217,70,59,0.35) 32px, transparent 32px),
+      repeating-linear-gradient(180deg, transparent 0 31px, var(--ligne) 31px 32px),
+      var(--papier); }
+    .domino .moitie { min-width: 0; padding: 6px 8px; font-size: 16px; }
+    .main { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<a href="../index.html" class="lien-maison">← Grimoire</a>
+
+<div class="carnet">
+
+  <!-- ====================== ACCUEIL ====================== -->
+  <div id="ecran-accueil">
+    <div class="embleme">🗺️</div>
+    <h1>Le Carnet de Voyage</h1>
+    <p class="sous-titre">
+      Cinq jours de classe verte à la montagne !<br>
+      Complète chaque page du carnet avec le verbe au <b>présent</b>.
+    </p>
+
+    <div class="bloc">
+      <div class="bloc-titre">📖 Les pages du carnet</div>
+      <div class="chapitres" id="liste-chapitres"></div>
+    </div>
+
+    <div class="bloc">
+      <div class="interrupteur">
+        <div>
+          <strong>✏️ Mode écrivain</strong>
+          Tu écris le verbe toi-même au lieu de le choisir.
+        </div>
+        <div class="bascule" id="bascule-ecrivain" role="switch" aria-checked="false" tabindex="0" aria-label="Mode écrivain"></div>
+      </div>
+    </div>
+
+    <button class="gros-btn soleil" id="btn-dominos">🎲 Les dominos des verbes</button>
+    <p class="aide-txt">Meilleur résultat aux dominos : <b id="dominos-record">—</b></p>
+  </div>
+
+  <!-- ====================== PAGE DU CARNET ====================== -->
+  <div id="ecran-jeu" class="cache">
+    <div class="hud">
+      <button class="btn-rond" id="jeu-retour" aria-label="Retour au carnet">←</button>
+      <div class="hud-titre" id="hud-titre"></div>
+      <div class="hud-compteur" id="hud-compteur"></div>
+    </div>
+    <div class="progres"><div class="progres-barre" id="progres-barre"></div></div>
+    <p class="intro" id="intro"></p>
+
+    <div class="page"><div class="phrase" id="phrase"></div></div>
+
+    <div class="options" id="options"></div>
+
+    <form class="saisie cache" id="saisie" autocomplete="off">
+      <input id="saisie-champ" type="text" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Ta réponse">
+      <button class="gros-btn" type="submit">Valider</button>
+      <div class="accents">
+        <button type="button" class="accent">é</button>
+        <button type="button" class="accent">è</button>
+        <button type="button" class="accent">ê</button>
+      </div>
+    </form>
+
+    <div class="retour-info" id="retour-info"></div>
+    <button class="gros-btn cache" id="btn-suivant">Phrase suivante →</button>
+  </div>
+
+  <!-- ====================== DOMINOS ====================== -->
+  <div id="ecran-dominos" class="cache">
+    <div class="hud">
+      <button class="btn-rond" id="dominos-retour" aria-label="Retour au carnet">←</button>
+      <div class="hud-titre">🎲 Les dominos des verbes</div>
+      <div class="hud-compteur" id="dominos-compteur"></div>
+    </div>
+    <div class="progres"><div class="progres-barre" id="dominos-barre"></div></div>
+    <p class="consigne">Quel domino s'accroche au bout de la chaîne ? Sa moitié gauche doit être le verbe conjugué.</p>
+    <div class="chaine" id="chaine"></div>
+    <div class="main" id="main"></div>
+    <div class="retour-info" id="dominos-info"></div>
+  </div>
+
+  <!-- ====================== BILAN ====================== -->
+  <div id="ecran-bilan" class="cache fin">
+    <div class="fin-emoji" id="bilan-emoji">🏕️</div>
+    <h1 id="bilan-titre">Page terminée !</h1>
+    <div class="etoiles" id="bilan-etoiles"></div>
+    <p class="sous-titre" id="bilan-detail"></p>
+    <div class="recap cache" id="recap">
+      <div class="recap-titre">À revoir</div>
+      <ul id="recap-liste"></ul>
+    </div>
+    <div class="bilan-btns">
+      <button class="gros-btn blanc" id="bilan-liste">← Carnet</button>
+      <button class="gros-btn blanc" id="bilan-rejouer">🔁 Rejouer</button>
+      <button class="gros-btn" id="bilan-suivant">Page suivante ▶</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* =========================================================================
+   LE CARNET DE VOYAGE DU PRÉSENT
+   Présent de l'indicatif, CM1 : les 20 verbes du 3e groupe demandés par
+   l'enseignant + être et avoir.
+
+   Deux jeux dans le même fichier :
+     - le carnet : récit de classe verte en 6 pages, une phrase à trou par
+       étape, QCM (4 formes) ou saisie libre (mode écrivain) ;
+     - les dominos : [forme conjuguée | pronom · infinitif], on accroche le
+       bon domino au bout de la chaîne.
+
+   Les formes conjuguées n'existent qu'à UN endroit : `CONJ`.
+   ========================================================================= */
+
+/* --- pronoms, indexés par la personne `pn` (0=je … 5=ils/elles) --- */
+const PRONOMS = ['je', 'tu', 'il / elle', 'nous', 'vous', 'ils / elles'];
+const PRONOMS_DOMINO = [['je'], ['tu'], ['il', 'elle', 'on'], ['nous'], ['vous'], ['ils', 'elles']];
+
+/* -------------------------------------------------------------------------
+   CONJUGAISONS
+   f    : les 6 formes du présent (je, tu, il, nous, vous, ils)
+   note : ce qui mérite d'être dit à l'enfant sur ce verbe
+   ------------------------------------------------------------------------- */
+const CONJ = {
+  'être':   { f: ['suis', 'es', 'est', 'sommes', 'êtes', 'sont'],
+              note: "Être ne ressemble à aucun autre verbe : il s'apprend par cœur." },
+  avoir:    { f: ['ai', 'as', 'a', 'avons', 'avez', 'ont'],
+              note: "Avoir s'apprend par cœur. Avec je, on écrit j'ai." },
+  aller:    { f: ['vais', 'vas', 'va', 'allons', 'allez', 'vont'],
+              note: "Aller finit en -er mais il est du 3e groupe : je vais, ils vont." },
+  faire:    { f: ['fais', 'fais', 'fait', 'faisons', 'faites', 'font'],
+              note: "Attention : vous faites et ils font, jamais « faisez » ni « faisent »." },
+  prendre:  { f: ['prends', 'prends', 'prend', 'prenons', 'prenez', 'prennent'],
+              note: "Il prend finit par un d, sans t. Ils prennent prend deux n." },
+  rendre:   { f: ['rends', 'rends', 'rend', 'rendons', 'rendez', 'rendent'],
+              note: "Il rend finit par un d, sans t." },
+  dire:     { f: ['dis', 'dis', 'dit', 'disons', 'dites', 'disent'],
+              note: "Attention : vous dites, jamais « disez »." },
+  mettre:   { f: ['mets', 'mets', 'met', 'mettons', 'mettez', 'mettent'],
+              note: "Un seul t au singulier (il met), deux t au pluriel (nous mettons)." },
+  pouvoir:  { f: ['peux', 'peux', 'peut', 'pouvons', 'pouvez', 'peuvent'],
+              note: "Je peux, tu peux : ces deux-là finissent par un x." },
+  vouloir:  { f: ['veux', 'veux', 'veut', 'voulons', 'voulez', 'veulent'],
+              note: "Je veux, tu veux : ces deux-là finissent par un x." },
+  voir:     { f: ['vois', 'vois', 'voit', 'voyons', 'voyez', 'voient'],
+              note: "Nous voyons, vous voyez prennent un y ; ils voient garde le i." },
+  devoir:   { f: ['dois', 'dois', 'doit', 'devons', 'devez', 'doivent'],
+              note: "Le radical change : je dois, nous devons, ils doivent." },
+  vivre:    { f: ['vis', 'vis', 'vit', 'vivons', 'vivez', 'vivent'],
+              note: "Au singulier le v final disparaît : je vis, il vit." },
+  rire:     { f: ['ris', 'ris', 'rit', 'rions', 'riez', 'rient'],
+              note: "Nous rions, vous riez : un seul i." },
+  lire:     { f: ['lis', 'lis', 'lit', 'lisons', 'lisez', 'lisent'],
+              note: "Au pluriel, un s apparaît : nous lisons, ils lisent." },
+  'écrire': { f: ['écris', 'écris', 'écrit', 'écrivons', 'écrivez', 'écrivent'],
+              note: "Au pluriel, un v apparaît : nous écrivons, ils écrivent." },
+  tenir:    { f: ['tiens', 'tiens', 'tient', 'tenons', 'tenez', 'tiennent'],
+              note: "Je tiens, nous tenons, ils tiennent avec deux n." },
+  dormir:   { f: ['dors', 'dors', 'dort', 'dormons', 'dormez', 'dorment'],
+              note: "Au singulier le m disparaît : je dors, il dort." },
+  courir:   { f: ['cours', 'cours', 'court', 'courons', 'courez', 'courent'],
+              note: "Au présent, un seul r : nous courons." },
+  savoir:   { f: ['sais', 'sais', 'sait', 'savons', 'savez', 'savent'],
+              note: "Je sais au singulier, nous savons au pluriel." },
+  croire:   { f: ['crois', 'crois', 'croit', 'croyons', 'croyez', 'croient'],
+              note: "Nous croyons, vous croyez prennent un y ; ils croient garde le i." },
+  boire:    { f: ['bois', 'bois', 'boit', 'buvons', 'buvez', 'boivent'],
+              note: "Le radical change : je bois, nous buvons, ils boivent." }
+};
+
+/* la liste donnée par l'enseignant : la vérification exige qu'elle soit couverte */
+const VERBES_DU_PROGRAMME = [
+  'aller', 'faire', 'prendre', 'rendre', 'dire', 'mettre', 'pouvoir', 'vouloir', 'voir',
+  'devoir', 'vivre', 'rire', 'lire', 'écrire', 'tenir', 'dormir', 'courir', 'savoir',
+  'croire', 'boire', 'être', 'avoir'
+];
+
+/* -------------------------------------------------------------------------
+   FAUSSES FORMES FRÉQUENTES : proposées en priorité comme mauvaise réponse.
+   inf → { pn: forme fausse }. Ne doit jamais être une vraie forme du verbe.
+   ------------------------------------------------------------------------- */
+const PIEGES = {
+  'être':   { 4: 'étes' },
+  aller:    { 5: 'allent' },
+  faire:    { 4: 'faisez', 5: 'faisent' },
+  prendre:  { 2: 'prent', 3: 'prendons', 5: 'prendent' },
+  rendre:   { 2: 'rent' },
+  dire:     { 4: 'disez' },
+  mettre:   { 2: 'mett', 3: 'metons' },
+  pouvoir:  { 0: 'peus', 1: 'peus', 5: 'pouvent' },
+  vouloir:  { 0: 'veus', 1: 'veus', 5: 'voulent' },
+  voir:     { 3: 'voions', 5: 'voyent' },
+  devoir:   { 5: 'devent' },
+  vivre:    { 2: 'vie' },
+  rire:     { 3: 'riions' },
+  'écrire': { 3: 'écrisons', 5: 'écrient' },
+  tenir:    { 3: 'tienons', 5: 'tienent' },
+  dormir:   { 0: 'dorts', 2: 'dor' },
+  courir:   { 3: 'courrons', 5: 'courrent' },
+  croire:   { 3: 'croions', 5: 'croyent' },
+  boire:    { 3: 'boivons', 4: 'boivez', 5: 'buvent' }
+};
+
+/* -------------------------------------------------------------------------
+   LE RÉCIT
+   Chaque page = un moment de la classe verte, les étapes sont dans l'ordre
+   de l'histoire (on ne mélange pas).
+   b   : début de phrase, se termine par une espace ou par une apostrophe (j')
+   a   : fin de phrase
+   inf : infinitif (clé de CONJ)
+   pn  : personne 0..5
+   s   : le sujet tel qu'il est écrit dans `b` (cité dans l'explication)
+   ------------------------------------------------------------------------- */
+const CHAPITRES = [
+  { emoji: '🚌', titre: 'Le départ',
+    intro: "Ce matin, toute la classe part en classe verte à la montagne.",
+    etapes: [
+      { b: "Ce matin, je ",                        a: " mon sac à dos tout seul.",                     inf: 'faire',   pn: 0, s: "je" },
+      { b: "Maman ",                               a: " : « N'oublie pas ta gourde ! »",               inf: 'dire',    pn: 2, s: "Maman" },
+      { b: "Devant l'école, les jumeaux ",         a: " déjà là avec leurs valises.",                  inf: 'être',    pn: 5, s: "les jumeaux" },
+      { b: "Sam, tu ",                             a: " ton doudou dans ta valise ?",                  inf: 'prendre', pn: 1, s: "tu" },
+      { b: "Tous les élèves de CM1 ",              a: " à la montagne pour cinq jours.",               inf: 'aller',   pn: 5, s: "Tous les élèves de CM1" },
+      { b: "Inès et toi, vous ",                   a: " au revoir à vos parents par la fenêtre.",      inf: 'dire',    pn: 4, s: "Inès et toi, vous" }
+    ] },
+  { emoji: '🏔️', titre: "L'arrivée au chalet",
+    intro: "Après trois heures de route, le car s'arrête devant un grand chalet en bois.",
+    etapes: [
+      { b: "Par la fenêtre du car, nous ",         a: " les sommets enneigés.",                        inf: 'voir',    pn: 3, s: "nous" },
+      { b: "L'animatrice ",                        a: " une grosse clé à la main.",                    inf: 'tenir',   pn: 2, s: "L'animatrice" },
+      { b: "Dans la chambre, j'",                  a: " le lit près de la fenêtre.",                   inf: 'avoir',   pn: 0, s: "j'" },
+      { b: "Les filles ",                          a: " leurs pyjamas sous l'oreiller.",               inf: 'mettre',  pn: 5, s: "Les filles" },
+      { b: "« Vous ",                              a: " ranger vos affaires avant le goûter », dit la maîtresse.", inf: 'devoir', pn: 4, s: "Vous" },
+      { b: "Sam, tu ",                             a: " vraiment dormir en haut du lit superposé ?",   inf: 'vouloir', pn: 1, s: "tu" }
+    ] },
+  { emoji: '🥾', titre: 'La randonnée',
+    intro: "Le lendemain, départ pour une grande balade dans la forêt.",
+    etapes: [
+      { b: "Le guide ",                            a: " le nom de chaque arbre.",                      inf: 'savoir',  pn: 2, s: "Le guide" },
+      { b: "Léo ",                                 a: " la carte pour trouver le bon chemin.",         inf: 'prendre', pn: 2, s: "Léo" },
+      { b: "Les garçons ",                         a: " devant pour arriver les premiers.",            inf: 'courir',  pn: 5, s: "Les garçons" },
+      { b: "Moi, je ne ",                          a: " plus avancer : j'ai mal aux pieds !",          inf: 'pouvoir', pn: 0, s: "je" },
+      { b: "Au sommet, nous ",                     a: " toute l'eau de nos gourdes.",                  inf: 'boire',   pn: 3, s: "nous" },
+      { b: "Inès et Léa, vous ",                   a: " que c'est un aigle, là-haut ?",                inf: 'croire',  pn: 4, s: "Inès et Léa, vous" },
+      { b: "Dans la forêt, beaucoup d'animaux ",   a: " cachés sous les feuilles.",                    inf: 'vivre',   pn: 5, s: "beaucoup d'animaux" }
+    ] },
+  { emoji: '🧺', titre: 'Le pique-nique',
+    intro: "À midi, tout le monde s'installe dans l'herbe, au bord du lac.",
+    etapes: [
+      { b: "Léa ",                                 a: " la nappe sur l'herbe.",                        inf: 'mettre',  pn: 2, s: "Léa" },
+      { b: "Les jumeaux ",                         a: " des grimaces avec leurs sandwichs.",           inf: 'faire',   pn: 5, s: "Les jumeaux" },
+      { b: "Tu ",                                  a: " aux éclats quand Léo glisse dans l'herbe.",    inf: 'rire',    pn: 1, s: "Tu" },
+      { b: "Je ",                                  a: " son ballon à Hugo après le match.",            inf: 'rendre',  pn: 0, s: "Je" },
+      { b: "Nous ",                                a: " une carte postale à nos parents.",             inf: 'écrire',  pn: 3, s: "Nous" },
+      { b: "Les animateurs ",                      a: " leur café en surveillant le lac.",             inf: 'boire',   pn: 5, s: "Les animateurs" },
+      { b: "Après le dessert, les garçons ",       a: " encore faim !",                                inf: 'avoir',   pn: 5, s: "les garçons" }
+    ] },
+  { emoji: '🔥', titre: 'La veillée',
+    intro: "Le soir, les animateurs allument un feu de camp devant le chalet.",
+    etapes: [
+      { b: "L'animateur ",                         a: " une histoire de fantômes à voix basse.",       inf: 'lire',    pn: 2, s: "L'animateur" },
+      { b: "Sam et moi, nous ",                    a: " très fort quand il imite le loup.",            inf: 'rire',    pn: 3, s: "Sam et moi, nous" },
+      { b: "Inès et toi, vous ",                   a: " la lampe de poche pendant l'histoire.",        inf: 'tenir',   pn: 4, s: "Inès et toi, vous" },
+      { b: "Les petits ",                          a: " que le fantôme existe vraiment !",             inf: 'croire',  pn: 5, s: "Les petits" },
+      { b: "Tu ",                                  a: " les étoiles filantes au-dessus du lac ?",      inf: 'voir',    pn: 1, s: "Tu" },
+      { b: "Ce soir, nous ",                       a: " heureux d'être tous ensemble.",                inf: 'être',    pn: 3, s: "nous" }
+    ] },
+  { emoji: '🌙', titre: 'La nuit et le retour',
+    intro: "Dernière nuit au chalet… puis c'est déjà l'heure de rentrer.",
+    etapes: [
+      { b: "Dans le dortoir, les jumeaux ",        a: " déjà à poings fermés.",                        inf: 'dormir',  pn: 5, s: "les jumeaux" },
+      { b: "Moi, je ",                             a: " mal : Léo ronfle trop fort !",                 inf: 'dormir',  pn: 0, s: "je" },
+      { b: "Le matin, vous ",                      a: " vos valises en dix minutes.",                  inf: 'faire',   pn: 4, s: "vous" },
+      { b: "Dans le car, Inès ",                   a: " la dernière page de son journal.",             inf: 'écrire',  pn: 2, s: "Inès" },
+      { b: "Tu ",                                  a: " déjà ce que tu vas raconter à la maison ?",    inf: 'savoir',  pn: 1, s: "Tu" },
+      { b: "Sur le parking, nos parents ",         a: " enfin nous serrer dans leurs bras.",           inf: 'pouvoir', pn: 5, s: "nos parents" },
+      { b: "Je ",                                  a: " la plus belle semaine de l'année !",           inf: 'vivre',   pn: 0, s: "Je" }
+    ] }
+];
+
+const DOMINOS_PAR_MANCHE = 10;
+const CLE_STOCKAGE = 'grimoire.carnet-voyage-present.v1';
+
+/* --------------------------- ÉTAT ---------------------------------------- */
+let etat = null;          // partie en cours dans le carnet
+let dom = null;           // manche de dominos en cours
+let modeEcrivain = false;
+let progression = { etoiles: {}, dominos: 0 };
+
+/* ------------------------------- OUTILS ---------------------------------- */
+const $ = id => document.getElementById(id);
+const calculerEtoiles = erreurs => erreurs === 0 ? 3 : erreurs <= 2 ? 2 : 1;
+const hasard = tab => tab[Math.floor(Math.random() * tab.length)];
+
+function melange(tab) {
+  const t = tab.slice();
+  for (let i = t.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [t[i], t[j]] = [t[j], t[i]];
+  }
+  return t;
+}
+
+function commenceParVoyelle(mot) { return /^[aeéèêiouh]/i.test(mot); }
+
+/* « je » + forme, avec l'élision : j'ai, j'écris. `gras` met la forme en <b>. */
+function avecPronom(pronom, forme, gras) {
+  const f = gras ? '<b>' + forme + '</b>' : forme;
+  return pronom === 'je' && commenceParVoyelle(forme) ? "j'" + f : pronom + ' ' + f;
+}
+
+function etoilesTexte(n) { return '★'.repeat(n) + '☆'.repeat(3 - n); }
+
+function chargerProgression() {
+  try {
+    const brut = localStorage.getItem(CLE_STOCKAGE);
+    if (brut) progression = Object.assign(progression, JSON.parse(brut));
+  } catch (e) { /* stockage indisponible : on joue quand même */ }
+}
+
+function sauverProgression() {
+  try { localStorage.setItem(CLE_STOCKAGE, JSON.stringify(progression)); } catch (e) {}
+}
+
+function montrer(id) {
+  ['ecran-accueil', 'ecran-jeu', 'ecran-dominos', 'ecran-bilan']
+    .forEach(e => $(e).classList.toggle('cache', e !== id));
+  window.scrollTo(0, 0);
+}
+
+/* la bonne forme + n mauvaises : d'abord la fausse forme classique, puis les
+   autres personnes du même verbe (sans doublon : je dis / tu dis = une seule) */
+function mauvaisesFormes(inf, pn, n) {
+  const bonne = CONJ[inf].f[pn];
+  const piege = PIEGES[inf] && PIEGES[inf][pn];
+  const autres = melange([...new Set(CONJ[inf].f)].filter(f => f !== bonne));
+  return (piege ? [piege] : []).concat(autres).slice(0, n);
+}
+
+/* petit tableau du verbe, la ligne demandée surlignée */
+function tableauVerbe(inf, pn) {
+  return '<div class="tableau">' + CONJ[inf].f.map((f, i) =>
+    '<span' + (i === pn ? ' class="ici"' : '') + '>' + avecPronom(PRONOMS[i], f) + '</span>'
+  ).join('') + '</div>';
+}
+
+/* ==========================================================================
+   LE CARNET
+   ========================================================================== */
+
+function demarrerChapitre(num) {
+  etat = { num: num, index: 0, erreurs: [], verrou: false };
+  montrer('ecran-jeu');
+  afficherEtape();
+}
+
+function afficherEtape() {
+  const ch = CHAPITRES[etat.num];
+  const e = ch.etapes[etat.index];
+  etat.verrou = false;
+
+  $('hud-titre').textContent = ch.emoji + ' ' + ch.titre;
+  $('hud-compteur').textContent = (etat.index + 1) + ' / ' + ch.etapes.length;
+  $('progres-barre').style.width = (etat.index / ch.etapes.length * 100) + '%';
+  $('intro').textContent = etat.index === 0 ? ch.intro : '';
+
+  $('phrase').innerHTML = e.b + '<span class="trou" id="trou">…</span> '
+    + '<span class="infinitif">(' + e.inf + ')</span>' + e.a;
+
+  const bonne = CONJ[e.inf].f[e.pn];
+  const boite = $('options');
+  boite.innerHTML = '';
+  boite.classList.toggle('cache', modeEcrivain);
+  $('saisie').classList.toggle('cache', !modeEcrivain);
+
+  if (modeEcrivain) {
+    const champ = $('saisie-champ');
+    champ.value = '';
+    champ.disabled = false;
+    champ.className = '';
+    champ.focus();
+  } else {
+    melange([bonne].concat(mauvaisesFormes(e.inf, e.pn, 3))).forEach(opt => {
+      const b = document.createElement('button');
+      b.className = 'option';
+      b.textContent = opt;
+      b.addEventListener('click', () => repondre(opt, b));
+      boite.appendChild(b);
+    });
+  }
+
+  $('retour-info').className = 'retour-info';
+  $('btn-suivant').classList.add('cache');
+}
+
+function explication(e) {
+  const bonne = CONJ[e.inf].f[e.pn];
+  const pronomSeul = e.s.toLowerCase().replace(/'$/, 'e') === PRONOMS[e.pn].split(' ')[0]
+                  || e.s.toLowerCase() === "j'";
+  const sujet = pronomSeul
+    ? 'Le sujet est « <b>' + e.s + '</b> »'
+    : 'Le sujet est « <b>' + e.s + '</b> » : on peut le remplacer par <b>' + PRONOMS[e.pn] + '</b>';
+  return sujet + '. Au présent : <b>' + avecPronom(PRONOMS[e.pn].split(' ')[0], bonne) + '</b>.'
+    + '<span class="note">💡 ' + CONJ[e.inf].note + '</span>';
+}
+
+function repondre(choix, bouton) {
+  if (etat.verrou) return;
+  etat.verrou = true;
+
+  const e = CHAPITRES[etat.num].etapes[etat.index];
+  const bonne = CONJ[e.inf].f[e.pn];
+  const juste = choix === bonne;
+
+  if (modeEcrivain) {
+    const champ = $('saisie-champ');
+    champ.disabled = true;
+    champ.className = juste ? 'juste' : 'faux';
+  } else {
+    document.querySelectorAll('.option').forEach(b => {
+      b.disabled = true;
+      if (b.textContent === bonne) b.classList.add('bonne');
+    });
+    if (!juste) bouton.classList.add('mauvaise');
+  }
+
+  const trou = $('trou');
+  trou.textContent = bonne;
+  trou.classList.add('rempli');
+
+  const info = $('retour-info');
+  if (juste) {
+    info.className = 'retour-info visible ok';
+    info.innerHTML = '✅ Bravo ! ' + explication(e);
+  } else {
+    etat.erreurs.push(e);
+    info.className = 'retour-info visible ko';
+    info.innerHTML = (modeEcrivain && choix ? '❌ Tu as écrit « ' + echapper(choix) + ' ». ' : '❌ ')
+      + explication(e) + tableauVerbe(e.inf, e.pn);
+  }
+
+  const dernier = etat.index === CHAPITRES[etat.num].etapes.length - 1;
+  const btn = $('btn-suivant');
+  btn.textContent = dernier ? 'Fermer la page 📖' : 'Phrase suivante →';
+  btn.classList.remove('cache');
+  btn.focus();
+}
+
+function echapper(txt) {
+  return txt.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+function suivant() {
+  etat.index++;
+  if (etat.index < CHAPITRES[etat.num].etapes.length) { afficherEtape(); return; }
+  finirChapitre();
+}
+
+function finirChapitre() {
+  const n = calculerEtoiles(etat.erreurs.length);
+  if (n > (progression.etoiles[etat.num] || 0)) {
+    progression.etoiles[etat.num] = n;
+    sauverProgression();
+  }
+  const ch = CHAPITRES[etat.num];
+  const recap = etat.erreurs.map(e => e.b + '<b>' + CONJ[e.inf].f[e.pn] + '</b>' + e.a
+                                      + ' <em>(' + e.inf + ')</em>');
+  afficherBilan({
+    emoji: ch.emoji,
+    titre: 'Page « ' + ch.titre + ' » terminée !',
+    etoiles: n,
+    detail: etat.erreurs.length === 0
+      ? 'Aucune erreur, ton carnet est parfait !'
+      : etat.erreurs.length + ' erreur' + (etat.erreurs.length > 1 ? 's' : '') + ' sur '
+        + ch.etapes.length + ' phrases.',
+    recap: recap,
+    rejouer: () => demarrerChapitre(etat.num),
+    suivant: etat.num < CHAPITRES.length - 1 ? () => demarrerChapitre(etat.num + 1) : null
+  });
+}
+
+/* ==========================================================================
+   LES DOMINOS
+   Un domino = { g: forme conjuguée, d: { inf, pn, pronom } }.
+   Le bout de la chaîne pose une question (moitié droite du dernier domino) ;
+   le bon domino est celui dont la moitié gauche y répond.
+   On valide par la forme, pas par le domino : « tu · dire » accepte « dis »
+   même si ce « dis » avait été fabriqué pour « je ».
+   ========================================================================== */
+
+function questionAuHasard(eviter) {
+  let q;
+  do {
+    const inf = hasard(Object.keys(CONJ));
+    const pn = Math.floor(Math.random() * 6);
+    q = { inf: inf, pn: pn, pronom: hasard(PRONOMS_DOMINO[pn]) };
+  } while (eviter && (q.inf === eviter.inf || eviter.deja.has(q.inf + q.pn)));
+  return q;
+}
+
+function demarrerDominos() {
+  /* on prépare toute la suite de questions : la réponse à la question k est
+     la moitié gauche du domino k+1, sa moitié droite est la question k+1 */
+  const questions = [];
+  const deja = new Set();
+  for (let i = 0; i < DOMINOS_PAR_MANCHE; i++) {
+    const q = questionAuHasard(i ? { inf: questions[i - 1].inf, deja: deja } : null);
+    deja.add(q.inf + q.pn);
+    questions.push(q);
+  }
+  dom = {
+    questions: questions,
+    chaine: [{ g: '🚩', d: questions[0] }],
+    main: [],
+    erreurs: 0,
+    erreursIci: 0,
+    rates: [],
+    verrou: false
+  };
+  montrer('ecran-dominos');
+  nouvelleMain();
+}
+
+function nouvelleMain() {
+  const k = dom.chaine.length - 1;
+  const q = dom.questions[k];
+  const suivante = dom.questions[k + 1] || null;   // null : dernier domino, drapeau d'arrivée
+  const bon = { g: CONJ[q.inf].f[q.pn], d: suivante };
+  const faux = mauvaisesFormes(q.inf, q.pn, 3).map(f => ({ g: f, d: questionAuHasard(null) }));
+  dom.main = melange([bon].concat(faux));
+  dom.erreursIci = 0;
+  dom.verrou = false;
+  afficherDominos();
+}
+
+function htmlDomino(d) {
+  const droite = d.d
+    ? '<span class="moitie question"><small>' + d.d.pronom + '</small>' + d.d.inf + '</span>'
+    : '<span class="moitie question">🏁</span>';
+  return '<span class="moitie forme">' + d.g + '</span>' + droite;
+}
+
+function afficherDominos() {
+  const poses = dom.chaine.length - 1;
+  $('dominos-compteur').textContent = poses + ' / ' + DOMINOS_PAR_MANCHE;
+  $('dominos-barre').style.width = (poses / DOMINOS_PAR_MANCHE * 100) + '%';
+
+  /* on ne montre que les 3 derniers dominos : la chaîne tient sur un téléphone */
+  const chaine = $('chaine');
+  const visibles = dom.chaine.slice(-3);
+  chaine.innerHTML = (dom.chaine.length > 3 ? '<span class="ellipse">…</span>' : '')
+    + visibles.map((d, i) => {
+        const bout = i === visibles.length - 1;
+        return '<div class="domino' + (bout ? ' bout' + (poses ? ' pose' : '') : '') + '">'
+               + htmlDomino(d) + '</div>';
+      }).join('');
+
+  const main = $('main');
+  main.innerHTML = '';
+  dom.main.forEach(d => {
+    const b = document.createElement('button');
+    b.className = 'domino';
+    b.innerHTML = htmlDomino(d);
+    b.addEventListener('click', () => jouerDomino(d, b));
+    main.appendChild(b);
+  });
+
+  $('dominos-info').className = 'retour-info';
+}
+
+function jouerDomino(d, bouton) {
+  if (dom.verrou) return;
+  const q = dom.chaine[dom.chaine.length - 1].d;
+  const bonne = CONJ[q.inf].f[q.pn];
+  const info = $('dominos-info');
+
+  if (d.g === bonne) {
+    dom.verrou = true;
+    dom.chaine.push(d);
+    info.className = 'retour-info visible ok';
+    info.innerHTML = '✅ <b>' + avecPronom(q.pronom, bonne) + '</b> (' + q.inf + ')';
+    setTimeout(() => {
+      if (dom.chaine.length - 1 === DOMINOS_PAR_MANCHE) finirDominos();
+      else nouvelleMain();
+    }, 800);
+    return;
+  }
+
+  dom.erreurs++;
+  dom.erreursIci++;
+  if (dom.erreursIci === 1) dom.rates.push(q);
+  bouton.classList.remove('mauvaise');
+  void bouton.offsetWidth;   // relance l'animation de secousse
+  bouton.classList.add('mauvaise');
+  info.className = 'retour-info visible ko';
+  info.innerHTML = '❌ Pas « ' + avecPronom(q.pronom, d.g) + ' ». Cherche le verbe <b>' + q.inf
+    + '</b> avec <b>' + q.pronom + '</b>.'
+    + (dom.erreursIci >= 2 ? '<span class="note">💡 ' + CONJ[q.inf].note + '</span>' : '');
+
+  /* 2e erreur sur le même bout de chaîne : le bon domino se met à pulser */
+  if (dom.erreursIci >= 2) {
+    const boutons = $('main').children;
+    dom.main.forEach((m, i) => { if (m.g === bonne) boutons[i].classList.add('aide'); });
+  }
+}
+
+function finirDominos() {
+  const n = calculerEtoiles(dom.erreurs);
+  if (n > progression.dominos) {
+    progression.dominos = n;
+    sauverProgression();
+  }
+  afficherBilan({
+    emoji: '🎲',
+    titre: 'Chaîne terminée !',
+    etoiles: n,
+    detail: dom.erreurs === 0
+      ? 'Dix dominos sans une erreur, bravo !'
+      : dom.erreurs + ' erreur' + (dom.erreurs > 1 ? 's' : '') + ' pour ' + DOMINOS_PAR_MANCHE + ' dominos.',
+    recap: dom.rates.map(q => avecPronom(q.pronom, CONJ[q.inf].f[q.pn], true) + ' <em>(' + q.inf + ')</em>'),
+    rejouer: demarrerDominos,
+    suivant: null
+  });
+}
+
+/* ==========================================================================
+   BILAN (commun au carnet et aux dominos)
+   ========================================================================== */
+
+let actionsBilan = { rejouer: null, suivant: null };
+
+function afficherBilan(b) {
+  montrer('ecran-bilan');
+  $('bilan-emoji').textContent = b.emoji;
+  $('bilan-titre').textContent = b.titre;
+  $('bilan-etoiles').innerHTML = [0, 1, 2].map(i =>
+    '<span class="' + (i < b.etoiles ? '' : 'vide') + '" style="animation-delay:' + (i * 0.2) + 's">★</span>'
+  ).join('');
+  $('bilan-detail').textContent = b.detail;
+
+  const liste = $('recap-liste');
+  liste.innerHTML = b.recap.map(r => '<li>' + r + '</li>').join('');
+  $('recap').classList.toggle('cache', !b.recap.length);
+
+  actionsBilan = { rejouer: b.rejouer, suivant: b.suivant };
+  $('bilan-suivant').classList.toggle('cache', !b.suivant);
+}
+
+/* ==========================================================================
+   ACCUEIL
+   ========================================================================== */
+
+function construireAccueil() {
+  const boite = $('liste-chapitres');
+  boite.innerHTML = '';
+  CHAPITRES.forEach((ch, i) => {
+    /* page N+1 ouverte dès que la page N a au moins une étoile */
+    const ouverte = i === 0 || (progression.etoiles[i - 1] || 0) >= 1;
+    const etoiles = progression.etoiles[i] || 0;
+    const b = document.createElement('button');
+    b.className = 'chapitre-btn';
+    b.disabled = !ouverte;
+    b.innerHTML = '<span class="chapitre-emoji">' + (ouverte ? ch.emoji : '🔒') + '</span>'
+      + '<span class="chapitre-txt"><strong>Page ' + (i + 1) + ' · ' + ch.titre + '</strong>'
+      + '<span>' + ch.etapes.length + ' phrases</span></span>'
+      + '<span class="chapitre-etoiles">' + (etoiles ? etoilesTexte(etoiles) : '') + '</span>';
+    b.addEventListener('click', () => demarrerChapitre(i));
+    boite.appendChild(b);
+  });
+  $('dominos-record').textContent = progression.dominos ? etoilesTexte(progression.dominos) : '—';
+}
+
+function retourAccueil() {
+  construireAccueil();
+  montrer('ecran-accueil');
+}
+
+/* ------------------------------ BRANCHEMENTS ----------------------------- */
+$('btn-suivant').addEventListener('click', suivant);
+$('jeu-retour').addEventListener('click', retourAccueil);
+$('dominos-retour').addEventListener('click', retourAccueil);
+$('btn-dominos').addEventListener('click', demarrerDominos);
+$('bilan-liste').addEventListener('click', retourAccueil);
+$('bilan-rejouer').addEventListener('click', () => actionsBilan.rejouer());
+$('bilan-suivant').addEventListener('click', () => actionsBilan.suivant && actionsBilan.suivant());
+
+$('saisie').addEventListener('submit', ev => {
+  ev.preventDefault();
+  const brut = $('saisie-champ').value.trim().toLowerCase().replace(/\s+/g, ' ');
+  if (!brut || etat.verrou) return;
+  repondre(brut, null);
+});
+document.querySelectorAll('.accent').forEach(b => b.addEventListener('click', () => {
+  const champ = $('saisie-champ');
+  if (champ.disabled) return;
+  const pos = champ.selectionStart ?? champ.value.length;
+  champ.value = champ.value.slice(0, pos) + b.textContent + champ.value.slice(champ.selectionEnd ?? pos);
+  champ.focus();
+  champ.setSelectionRange(pos + 1, pos + 1);
+}));
+
+const bascule = $('bascule-ecrivain');
+function basculerEcrivain() {
+  modeEcrivain = !modeEcrivain;
+  bascule.classList.toggle('on', modeEcrivain);
+  bascule.setAttribute('aria-checked', modeEcrivain);
+}
+bascule.addEventListener('click', basculerEcrivain);
+bascule.addEventListener('keydown', ev => {
+  if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); basculerEcrivain(); }
+});
+
+/* raccourcis clavier : 1-4 pour répondre, Entrée pour continuer */
+document.addEventListener('keydown', ev => {
+  const n = parseInt(ev.key, 10);
+  if (!$('ecran-jeu').classList.contains('cache') && !modeEcrivain) {
+    if (n >= 1 && n <= 4 && !etat.verrou) {
+      const b = document.querySelectorAll('.option')[n - 1];
+      if (b) b.click();
+    }
+  }
+  if (!$('ecran-dominos').classList.contains('cache') && n >= 1 && n <= 4) {
+    const b = $('main').children[n - 1];
+    if (b) b.click();
+  }
+});
+
+/* ==========================================================================
+   VÉRIFICATION DES DONNÉES AU CHARGEMENT
+   On logge, on ne casse pas le jeu. Zéro warning attendu.
+   ========================================================================== */
+(function verifier() {
+  VERBES_DU_PROGRAMME.forEach(inf => {
+    if (!CONJ[inf]) console.warn('Verbe du programme absent de CONJ : ' + inf);
+  });
+  Object.keys(CONJ).forEach(inf => {
+    const v = CONJ[inf];
+    if (v.f.length !== 6 || v.f.some(f => !f)) console.warn('CONJ.' + inf + ' : il faut 6 formes');
+    if (!v.note) console.warn('CONJ.' + inf + ' : note manquante');
+    /* le QCM a besoin de 3 mauvaises réponses distinctes à chaque personne */
+    for (let pn = 0; pn < 6; pn++) {
+      if (mauvaisesFormes(inf, pn, 3).length < 3) console.warn('CONJ.' + inf + ' : pas assez de formes distinctes');
+    }
+  });
+  Object.keys(PIEGES).forEach(inf => {
+    if (!CONJ[inf]) { console.warn('PIEGES.' + inf + ' : verbe inconnu'); return; }
+    Object.keys(PIEGES[inf]).forEach(pn => {
+      if (CONJ[inf].f.indexOf(PIEGES[inf][pn]) !== -1) {
+        console.warn('PIEGES.' + inf + '[' + pn + '] : « ' + PIEGES[inf][pn] + ' » est une vraie forme du verbe');
+      }
+    });
+  });
+
+  const verbesVus = new Set();
+  const personnesVues = new Set();
+  CHAPITRES.forEach((ch, c) => ch.etapes.forEach((e, i) => {
+    const ref = 'CHAPITRES[' + c + '].etapes[' + i + '] (' + e.inf + ')';
+    if (!CONJ[e.inf]) { console.warn(ref + ' : verbe inconnu'); return; }
+    if (!(e.pn >= 0 && e.pn <= 5)) console.warn(ref + ' : pn hors de 0..5');
+    if (!/[ ']$/.test(e.b)) console.warn(ref + " : b doit finir par une espace ou une apostrophe");
+    if (e.b.indexOf(e.s) === -1) console.warn(ref + ' : sujet « ' + e.s + ' » absent du début de phrase');
+    /* élision : j' devant voyelle, je devant consonne */
+    const forme = CONJ[e.inf].f[e.pn];
+    if (e.pn === 0 && commenceParVoyelle(forme) !== /'$/.test(e.b)) {
+      console.warn(ref + ' : élision incorrecte entre « ' + e.b + ' » et « ' + forme + ' »');
+    }
+    verbesVus.add(e.inf);
+    personnesVues.add(e.pn);
+  }));
+  VERBES_DU_PROGRAMME.forEach(inf => {
+    if (!verbesVus.has(inf)) console.warn('Le verbe ' + inf + " n'apparaît dans aucune page du carnet");
+  });
+  for (let pn = 0; pn < 6; pn++) {
+    if (!personnesVues.has(pn)) console.warn('Aucune phrase à la personne ' + PRONOMS[pn]);
+  }
+})();
+
+/* ------------------------------- DÉMARRAGE -------------------------------- */
+chargerProgression();
+construireAccueil();
+</script>
+
+</body>
+</html>

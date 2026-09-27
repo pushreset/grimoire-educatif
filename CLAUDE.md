@@ -16,6 +16,8 @@
 │   └── index.html
 ├── battle-royale-passe-compose/ ← jeu 4
 │   └── index.html
+├── carnet-voyage-present/      ← jeu 7 (CM1)
+│   └── index.html
 ├── chasseuses-alphabet/        ← jeu 5 (CP)
 │   └── index.html
 └── chasseuses-nombres/         ← jeu 6 (CP)
@@ -201,6 +203,32 @@ comme dans le donjon : si le stockage est bloqué, le jeu tourne quand même.
 
 Ajoute des entrées dans `phrases` / `verbes`, rien d'autre. Ouvre la console une fois :
 zéro warning = les données sont cohérentes.
+
+---
+
+## Jeu 7 — `carnet-voyage-present/`
+
+Présent de l'indicatif CM1, à la demande de l'enseignant : 20 verbes du 3e groupe + être et avoir
+(`VERBES_DU_PROGRAMME`). Ambiance carnet de voyage (page lignée, scotch), aucun asset.
+
+### Architecture
+
+Single-file, 4 écrans via `montrer(id)` + `.cache` : `ecran-accueil`, `ecran-jeu`, `ecran-dominos`, `ecran-bilan`.
+- **`CONJ`** : seule source des formes (`f` = 6 formes, `note` = remarque affichée à l'enfant). Jamais de forme
+  conjuguée écrite ailleurs.
+- **`PIEGES`** : fausses formes classiques (`faisez`, `boivons`…) par `inf` et `pn`, proposées en priorité
+  comme mauvaise réponse. Ne doivent jamais être une vraie forme.
+- **`CHAPITRES`** : 6 pages de récit (classe verte), étapes `{ b, a, inf, pn, s }` jouées **dans l'ordre**.
+  `b` finit par une espace ou une apostrophe (`"j'"` devant voyelle), `s` = sujet tel qu'écrit dans `b`.
+- Carnet : QCM (bonne forme + 3 via `mauvaisesFormes`) ou mode écrivain (saisie + boutons é è ê).
+  Le trou affiche toujours la bonne réponse en vert ; l'erreur affiche l'explication + `tableauVerbe`.
+- Dominos : `[forme | pronom · infinitif]`, main de 4, 10 par manche. **Validation par la forme**, pas par le
+  domino : je/tu partagent souvent la forme (*dis*), donc tout domino portant la bonne forme est accepté.
+  À la 2e erreur sur le même bout, le bon domino pulse (`.aide`).
+- Étoiles comme les jeux CP (`calculerEtoiles`), pas de vies ni de chrono. Page N+1 ouverte dès que N a une étoile.
+  `localStorage` sous `try/catch`, clé `grimoire.carnet-voyage-present.v1`.
+- IIFE de vérification : 22 verbes présents et tous utilisés dans le récit, 6 formes par verbe, pièges
+  non réels, élision je/j', sujet présent dans `b`, les 6 personnes couvertes. Zéro warning attendu.
 
 ---
 
